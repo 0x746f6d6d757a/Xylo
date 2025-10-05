@@ -58,6 +58,11 @@ It’s lightweight, reliable, and constantly evolving with new features to make 
 
 ## 🛠️ Changelog
 
+**05/10/2025** - *v1.0.1*
+> Added database connection.\
+Function to execute query. \
+Function to save and load guild settings.
+
 **05/10/2025** - *v1.0*
 > Created the skelethon of the discord bot.\
 Added custom logger.
