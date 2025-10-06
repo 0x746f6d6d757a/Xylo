@@ -183,14 +183,14 @@ const pendingUpdates = new Map()
  * @param {string} configType 
  * @param {Object} updatedSettings 
  */
-export function updateGuildConfig(client, guildId, configType, updatedSettings) {
+export async function updateGuildConfig(client, guildId, configType, updatedSettings) {
 
     let guildSettings = client.guildConfigs.get(guildId) || []
-    let configToEdit = guildSettings.find(config => config.configType === configType)
+    let configToEdit = await guildSettings.find(config => config.configType === configType)
     
     if (configToEdit) {
         configToEdit.configSettings = updatedSettings
-        client.guildConfigs.set(guildId, guildSettings)
+        await client.guildConfigs.set(guildId, guildSettings)
     }
 
     const key = `${guildId}:${configType}`

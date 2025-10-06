@@ -57,20 +57,20 @@ process.on('uncaughtException', (error) => {
 })
 
 process.on('SIGINT', async () => {
-    logger('system', 'info', 'Shutting down gracefully...');
-    await forceSyncConfigs();
-    await closeDatabasePool();
-    process.exit(0);
-});
+    logger('system', 'info', 'Shutting down gracefully...')
+    await forceSyncConfigs()
+    await closeDatabasePool()
+    process.exit(0)
+})
 
 process.on('SIGTERM', async () => {
-    logger('system', 'info', 'Shutting down gracefully...');
-    await forceSyncConfigs();
-    await closeDatabasePool();
-    process.exit(0);
-});
+    logger('system', 'info', 'Shutting down gracefully...')
+    await forceSyncConfigs()
+    await closeDatabasePool()
+    process.exit(0)
+})
 
 // Start config update interval (flush every 30 seconds)
-startConfigUpdateInterval(30000);
+startConfigUpdateInterval(30000)
 
 client.login(process.env.BOT_TOKEN)

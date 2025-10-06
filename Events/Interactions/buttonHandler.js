@@ -1,4 +1,4 @@
-import { Events, Client, ButtonInteraction, MessageFlags } from "discord.js"
+import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
 import sendLoggerPanel from "../../Utils/messages/Panels/loggerPanel.js"
@@ -35,11 +35,22 @@ export default {
                         return await sendLoggerPanel(configSettings, interaction, client)
 
                     case 'changeLevel':
-                        // TODO: Show modal or select menu to change logging level
-                        // configSettings.loggingLevel = newLevel
-                        // updateGuildConfig(client, guildId, selectedSystem, configSettings)
-                        // return await sendLoggerPanel(configSettings, interaction, client)
-                        return interaction.reply({ content: "Change level feature coming soon!", flags: MessageFlags.Ephemeral })
+
+                        const textInputLevel = new TextInputBuilder()
+                            .setCustomId('loggingLevelInput')
+                            .setLabel('Enter a logging level (1-3)')
+                            .setStyle(TextInputStyle.Short)
+                            .setPlaceholder('1 - Errors Only | 2 - Warnings + Errors | 3 - All Logs')
+                            .setRequired(true)
+                            .setMaxLength(1)
+                            .setMinLength(1)
+                        
+                        const changeLevelModal = new ModalBuilder()
+                            .setCustomId(`loggerSystem|${guildId}|changeLevelModal`)
+                            .setTitle('Change Logging Level')
+                            .setComponents(new ActionRowBuilder().addComponents(textInputLevel))
+
+                        return await interaction.showModal(changeLevelModal)
 
                     case 'setAdminRole':
                         // TODO: Show role select menu
