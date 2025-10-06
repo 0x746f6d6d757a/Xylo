@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk from "chalk"
 
 // Color definitions for different log levels
 const colorHash = {

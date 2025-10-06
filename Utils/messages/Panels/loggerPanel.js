@@ -1,8 +1,8 @@
-import { EmbedBuilder, ButtonBuilder, ModalBuilder, ButtonStyle, TextInputStyle, TextInputBuilder, ActionRowBuilder } from "discord.js";
+import { EmbedBuilder, ButtonBuilder, ModalBuilder, ButtonStyle, TextInputStyle, TextInputBuilder, ActionRowBuilder } from "discord.js"
 
 function createEmbedPanel(configSettings, client) {
 
-    let { enabled, adminRoleId, categoryParentID, loggingLevel } = configSettings;
+    let { enabled, adminRoleId, categoryParentID, loggingLevel } = configSettings
 
     return new EmbedBuilder()
         .setTitle('Logger System Settings')
@@ -15,7 +15,7 @@ function createEmbedPanel(configSettings, client) {
         )
         .setColor(0x5865F2)
         .setFooter({ text: client.developer.footerText, iconURL: client.developer.icon })
-        .setTimestamp();
+        .setTimestamp()
 }
 
 function createButtonSettings(configSettings, interaction) {
@@ -23,24 +23,24 @@ function createButtonSettings(configSettings, interaction) {
     const toggleButton = new ButtonBuilder()
         .setCustomId(`loggerSystem|${interaction.guildId}|toggle`)
         .setLabel(configSettings.enabled ? 'Disable Logger' : 'Enable Logger')
-        .setStyle(ButtonStyle.Secondary);
+        .setStyle(ButtonStyle.Secondary)
     
     const changeLevelButton = new ButtonBuilder()
         .setCustomId(`loggerSystem|${interaction.guildId}|changeLevel`)
         .setLabel('Change Logging Level')
-        .setStyle(ButtonStyle.Secondary);
+        .setStyle(ButtonStyle.Secondary)
     
     const setAdminRoleButton = new ButtonBuilder()
         .setCustomId(`loggerSystem|${interaction.guildId}|setAdminRole`)
         .setLabel('Set Admin Role')
-        .setStyle(ButtonStyle.Secondary);
+        .setStyle(ButtonStyle.Secondary)
 
     const setCategoryButton = new ButtonBuilder()
         .setCustomId(`loggerSystem|${interaction.guildId}|setCategory`)
         .setLabel('Set Category')
-        .setStyle(ButtonStyle.Secondary);
+        .setStyle(ButtonStyle.Secondary)
 
-    return new ActionRowBuilder().addComponents(toggleButton, changeLevelButton, setAdminRoleButton, setCategoryButton);
+    return new ActionRowBuilder().addComponents(toggleButton, changeLevelButton, setAdminRoleButton, setCategoryButton)
 
 }
 
@@ -52,13 +52,13 @@ function createButtonSettings(configSettings, interaction) {
  */
 export default async function sendLoggerPanel(configSettings, interaction, client) {
 
-    const embedPanel = createEmbedPanel(configSettings, client, interaction);
-    const buttonSettings = createButtonSettings(configSettings, interaction);
+    const embedPanel = createEmbedPanel(configSettings, client, interaction)
+    const buttonSettings = createButtonSettings(configSettings, interaction)
 
     if(interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embedPanel], components: [buttonSettings] });
+        await interaction.editReply({ embeds: [embedPanel], components: [buttonSettings] })
     } else {
-        await interaction.update({ embeds: [embedPanel], components: [buttonSettings] });
+        await interaction.update({ embeds: [embedPanel], components: [buttonSettings] })
     }
     
 }
