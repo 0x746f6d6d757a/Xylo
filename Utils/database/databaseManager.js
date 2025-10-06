@@ -28,8 +28,8 @@ export async function getDatabasePool() { // <-- rename here
     if (database.length === 0) await tempConnection.query(`CREATE DATABASE \`${databaseConfig.database}\``)
 
     await tempConnection.query(`USE \`${databaseConfig.database}\``)
-    await tempConnection.query(`CREATE TABLE IF NOT EXISTS guilds (guildId VARCHAR(32) PRIMARY KEY, ownerId VARCHAR(32) NOT NULL, isPaying TINYINT(1) DEFAULT 0 );`)
-    await tempConnection.query(`CREATE TABLE IF NOT EXISTS guild_configs ( configId INT AUTO_INCREMENT PRIMARY KEY, guildId VARCHAR(32) NOT NULL, configType VARCHAR(100) NOT NULL, configSettings TEXT NOT NULL );`)
+    await tempConnection.query(`CREATE TABLE IF NOT EXISTS guilds (guildId VARCHAR(32) PRIMARY KEY, ownerId VARCHAR(32) NOT NULL, isPaying TINYINT(1) DEFAULT 0 )`)
+    await tempConnection.query(`CREATE TABLE IF NOT EXISTS guild_configs ( configId INT AUTO_INCREMENT PRIMARY KEY, guildId VARCHAR(32) NOT NULL, configType VARCHAR(100) NOT NULL, configSettings TEXT NOT NULL )`)
 
     logger('db', 'info', 'Ensured database and tables exist.')
     await tempConnection.end()
@@ -172,3 +172,68 @@ export async function refreshClientConfigs(client) {
 
     }
 }
+
+// Queue to store pending updates
+const pendingUpdates = new Map()
+
+/**
+ * Updates guild configuration in client cache and queues database update
+ * @param {Client} client 
+ * @param {string} guildId 
+ * @param {string} configType 
+ * @param {Object} updatedSettings 
+ */
+export function updateGuildConfig(client, guildId, configType, updatedSettings) {
+
+    let guildSettings = client.guildConfigs.get(guildId) || []
+    let configToEdit = guildSettings.find(config => config.configType === configType)
+    
+    if (configToEdit) {
+        configToEdit.configSettings = updatedSettings
+        client.guildConfigs.set(guildId, guildSettings)
+    }
+
+    const key = `${guildId}:${configType}`
+    pendingUpdates.set(key, { guildId, configType, updatedSettings })
+    
+    logger('db', 'info', `Queued config update for guild ${guildId}, type ${configType}`)
+}
+
+// Flushes all pending updates to the database
+async function flushPendingUpdates() {
+    if (pendingUpdates.size === 0) return
+
+    logger('db', 'info', `Flushing ${pendingUpdates.size} pending config updates...`)
+
+    for (const [key, { guildId, configType, updatedSettings }] of pendingUpdates) {
+        try {
+
+            let query = 'UPDATE guild_configs SET configSettings = ? WHERE guildId = ? AND configType = ?'
+            await executeQuery( query, JSON.stringify(updatedSettings), guildId, configType )
+            pendingUpdates.delete(key)
+
+        } catch (error) {
+            logger('db', 'error', `Failed to update config for ${key}: ${error.message}`)
+        }
+    }
+
+    logger('db', 'info', 'Pending updates flushed.')
+}
+
+/**
+ * Starts the interval to flush pending updates
+ * @param {number} intervalMs - Interval in milliseconds (default: 30000 = 30 seconds)
+ */
+export function startConfigUpdateInterval(intervalMs = 30000) {
+    setInterval(async () => { await flushPendingUpdates() }, intervalMs)
+    logger('db', 'info', `Config update interval started (every ${intervalMs / 1000}s)`)
+}
+
+/**
+ * Forces an immediate flush of pending updates (useful for graceful shutdown)
+ */
+export async function forceSyncConfigs() {
+    logger('db', 'info', 'Forcing immediate sync of pending configs...')
+    await flushPendingUpdates()
+}
+

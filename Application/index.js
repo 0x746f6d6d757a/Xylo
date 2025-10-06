@@ -5,6 +5,7 @@ import util from 'util'
 
 // Custom Logger Import
 import logger from '../Functions/logger.js'
+import { startConfigUpdateInterval, forceSyncConfigs, closeDatabasePool } from '../Utils/database/databaseManager.js'
 
 // Getting the .env variables
 dotenv.config()
@@ -35,14 +36,13 @@ client.guildConfigs = new Map()
 import { eventHandler } from '../Handlers/eventHandler.js'
 await eventHandler(client)
 
-// Logging in the client
-client.login(process.env.BOT_TOKEN)
-
 /**
  * Declaring the Error Handlers
  * * [warning] Emitted whenever Node.js emits a process warning.
  * * [unhandledRejection] Emitted whenever a Promise is rejected and no error handler is attached to the promise within a turn of the event loop.
  * * [uncaughtException] Emitted when an uncaught JavaScript exception bubbles all the way back to the event loop.
+ * * [SIGINT] Emitted when the process is interrupted (Ctrl+C).
+ * * [SIGTERM] Emitted when the process is terminated (for example, by the system or a container orchestrator).
  */
 process.on('warning', (warning) => {
     logger('app', 'warn', `[${warning.name}] ${warning.message}\n${warning.stack}`)
@@ -55,3 +55,22 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (error) => {
     logger('app', 'error', `Uncaught Exception: ${util.inspect(error, { depth: null })}`)
 })
+
+process.on('SIGINT', async () => {
+    logger('system', 'info', 'Shutting down gracefully...');
+    await forceSyncConfigs();
+    await closeDatabasePool();
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    logger('system', 'info', 'Shutting down gracefully...');
+    await forceSyncConfigs();
+    await closeDatabasePool();
+    process.exit(0);
+});
+
+// Start config update interval (flush every 30 seconds)
+startConfigUpdateInterval(30000);
+
+client.login(process.env.BOT_TOKEN)
