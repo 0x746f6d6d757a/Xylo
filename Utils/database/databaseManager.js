@@ -2,6 +2,7 @@ import { createPool, createConnection } from "mysql2/promise"
 import logger from "../../Functions/logger.js"
 import databaseConfig from "./databaseConfig.json" with { type: "json" }
 import { Client } from "discord.js"
+import { validateLoggerConfig } from "../validators/configValidators.js"
 
 // Defined outside to be reused
 let databasePool = null
@@ -175,6 +176,7 @@ export async function refreshClientConfigs(client) {
 
 // Queue to store pending updates
 const pendingUpdates = new Map()
+let flushTimeout = null;
 
 /**
  * Updates guild configuration in client cache and queues database update
@@ -183,20 +185,31 @@ const pendingUpdates = new Map()
  * @param {string} configType 
  * @param {Object} updatedSettings 
  */
-export async function updateGuildConfig(client, guildId, configType, updatedSettings) {
+export function updateGuildConfig(client, guildId, configType, updatedSettings) {
 
-    let guildSettings = client.guildConfigs.get(guildId) || []
-    let configToEdit = await guildSettings.find(config => config.configType === configType)
-    
-    if (configToEdit) {
-        configToEdit.configSettings = updatedSettings
-        await client.guildConfigs.set(guildId, guildSettings)
+    let isValid = true
+    switch (configType) {
+        case 'loggerSystem':
+            isValid = validateLoggerConfig(updatedSettings)
+            break
+
+        default:
+            logger('db', 'warn', `No validator defined for config type: ${configType}`)
+            isValid = false
+            break
     }
 
-    const key = `${guildId}:${configType}`
-    pendingUpdates.set(key, { guildId, configType, updatedSettings })
+    if (!isValid) return logger('db', 'error', `Invalid configuration settings for type: ${configType}. Update aborted.`)
+
+    const key = `${guildId}:${configType}`;
+    client.guildConfigs.set(key, updatedSettings);
+    pendingUpdates.set(key, { guildId, configType, updatedSettings });
     
-    logger('db', 'info', `Queued config update for guild ${guildId}, type ${configType}`)
+    // Debounce: If many updates happen quickly, delay flush slightly
+    if (flushTimeout) clearTimeout(flushTimeout);
+    flushTimeout = setTimeout(() => flushPendingUpdates(), 5000); // 5s debounce
+    
+    logger('db', 'debug', `Queued config update for ${key}`)
 }
 
 // Flushes all pending updates to the database
