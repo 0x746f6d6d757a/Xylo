@@ -24,9 +24,12 @@ const client = new Client({
     partials: [ User, Message, GuildMember, ThreadMember]
 })
 
-// Initializing the collections where we will save our commands and events
+// Initializing the collections where we will save our commands and events.
 client.commands = new Collection()
 client.events = new Collection()
+
+// Initializing the map where we will save our configs for guilds
+client.guildConfigs = new Map()
 
 // Importing the event handler
 import { eventHandler } from '../Handlers/eventHandler.js'

@@ -1,6 +1,7 @@
 import { Events, Client, ActivityType } from "discord.js"
-import logger from "../../Functions/logger.js";
-import { commandHandler } from "../../Handlers/commandHandler.js";
+import logger from "../../Functions/logger.js"
+import { commandHandler } from "../../Handlers/commandHandler.js"
+import executeQuery, { refreshClientConfigs } from "../../Utils/database/databaseManager.js"
 
 export default {
     name: Events.ClientReady,
@@ -11,22 +12,8 @@ export default {
     */
     async execute(client) {
 
-        await commandHandler(client);
+        await commandHandler(client)
         logger('app', 'info', `Logged in as ${client.user.tag}`)
-
-        // Get developer information to store inside the config
-        const developer = await client.users.fetch(process.env.DEVELOPER_ID)
-        if (!developer) {
-            logger('app', 'warn', `Developer with ID ${process.env.DEVELOPER_ID} not found.`)
-        } else {
-            client.developer = {
-                id: developer.id,
-                tag: developer.tag,
-                icon: developer.displayAvatarURL(),
-                username: developer.username
-            }
-            logger('app', 'info', `Developer info loaded: ${developer.tag} (${developer.id})`)
-        }
 
         // Set an array of activities the bot will cycle through every 10 minutes
         let activitiesIndex = 0
@@ -42,6 +29,23 @@ export default {
             const activity = activities[activitiesIndex]
             client.user.setActivity(activity)
         }, 10 * 60 * 1000)
+
+
+        // Get developer information to store inside the config
+        const developer = await client.users.fetch(process.env.DEVELOPER_ID)
+        if (developer) {
+            client.developer = {
+                id: developer.id,
+                tag: developer.tag,
+                icon: developer.displayAvatarURL(),
+                username: developer.username,
+                footerText: `Developed by ${developer.username}`
+            }
+            logger('app', 'info', `Developer info loaded: ${developer.tag} (${developer.id})`)
+        } 
+
+        // Importing all the guild configurations into the map
+        refreshClientConfigs(client)
 
     }
 }
