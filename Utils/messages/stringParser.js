@@ -8,9 +8,9 @@ export function parseCustomId(customId) {
     const parts = customId.split('|')
 
     return {
+        selectedSystem: parts[0],
         guildId: parts[1],
-        selectedSystem: parts[2],
-        selectedAction: parts[3]
+        selectedAction: parts[2]
     }
 }
 /**
