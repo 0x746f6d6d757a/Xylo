@@ -1,6 +1,7 @@
 import { createPool, createConnection } from "mysql2/promise"
-import logger from "../../Functions/logger"
+import logger from "../../Functions/logger.js"
 import databaseConfig from "./databaseConfig.json" with { type: "json" }
+import { Client } from "discord.js"
 
 // Defined outside to be reused
 let databasePool = null
@@ -12,9 +13,9 @@ const RECONNECT_INTERVAL = 10000
 
 function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)) }
 
-export async function getDatabasePoll() {
+export async function getDatabasePool() { // <-- rename here
     if (databasePool) return databasePool
-    logger('database', 'info', 'Creating new database pool...')
+    logger('db', 'info', 'Creating new database pool...')
 
     const tempConnection = await createConnection({
         host: databaseConfig.host,
@@ -30,25 +31,25 @@ export async function getDatabasePoll() {
     await tempConnection.query(`CREATE TABLE IF NOT EXISTS guilds (guildId VARCHAR(32) PRIMARY KEY, ownerId VARCHAR(32) NOT NULL, isPaying TINYINT(1) DEFAULT 0 );`)
     await tempConnection.query(`CREATE TABLE IF NOT EXISTS guild_configs ( configId INT AUTO_INCREMENT PRIMARY KEY, guildId VARCHAR(32) NOT NULL, configType VARCHAR(100) NOT NULL, configSettings TEXT NOT NULL );`)
 
-    logger('database', 'info', 'Ensured database and tables exist.')
+    logger('db', 'info', 'Ensured database and tables exist.')
     await tempConnection.end()
 
     databasePool = await createNewPool()
-    logger('database', 'info', 'Database pool created and connected.')
+    logger('db', 'info', 'Database pool created and connected.')
 
     return databasePool
 }
 
 export default async function executeQuery(query, ...params) {
 
-    if(!databasePool) databasePool = await getDatabasePoll()
+    if(!databasePool) databasePool = await getDatabasePool()
 
     try {
         const [ rows, fields ] = await databasePool.execute(query, params)
-        logger('database', 'info', `Executed query: ${query}`)
+        logger('db', 'info', `Executed query: ${query}`)
         return { rows, fields }
     } catch (error) {
-        logger('database', 'error', `Error executing query: ${query} - ${error.message}`)
+        logger('db', 'error', `Error executing query: ${query} - ${error.message}`)
         throw error
     }
 
@@ -58,12 +59,11 @@ export async function closeDatabasePool() {
     if (databasePool) {
         await databasePool.end()
         databasePool = null
-        logger('database', 'info', 'Database pool closed.')
+        logger('db', 'info', 'Database pool closed.')
     }
 }
 
 async function createNewPool() {
-
     const dbPool = createPool({
         host: databaseConfig.host,
         user: databaseConfig.user,
@@ -75,27 +75,23 @@ async function createNewPool() {
         queueLimit: databaseConfig.queueLimit
     })
 
-     dbPool.on('error', async ( error ) => {
-        
+    dbPool.on('error', async ( error ) => {
         switch (error.code) {
-
-            // Connection lost / network issues
             case 'PROTOCOL_CONNECTION_LOST':
                 logger("DB_ERROR", "Database connection lost.")
                 const currentTime = Date.now()
-                if (currentTime - lastReconnectAttempt < reconnectingInterval) {
+                if (currentTime - lastReconnectAttempt < RECONNECT_INTERVAL) { // <-- fix variable name
                     logger("DB_ERROR", "Reconnect attempt throttled, waiting...")
                     break
                 }
 
                 lastReconnectAttempt = currentTime
-                logger("DB", `Attempting to reconnect in ${reconnectingInterval / 1000}s...`)
-                await delay(reconnectingInterval)
+                logger("DB", `Attempting to reconnect in ${RECONNECT_INTERVAL / 1000}s...`) // <-- fix variable name
+                await delay(RECONNECT_INTERVAL) // <-- fix variable name
 
                 try {
-                    
                     databasePool = null
-                    await getDatabasePool()
+                    await getDatabasePool() // <-- fix function name
                     logger("DB", "Reconnected to the database successfully.")
                 } catch (reconnectError) {
                     logger("DB_ERROR", `Database reconnection failed: ${reconnectError.message}`)
@@ -155,4 +151,24 @@ async function createNewPool() {
     })
 
     return dbPool
+}
+
+/**
+ * Refresh and load all guild configurations in the client
+ * @param {Client} client 
+ */
+export async function refreshClientConfigs(client) {
+
+    if (!client || !client.guilds || !client.guilds.cache) {
+        logger('app', 'error', 'Client or guilds cache is not available for refreshing configurations.')
+        return
+    }
+
+    for (const guild of client.guilds.cache.values()) {
+
+        let { rows: guildConfigs } = await executeQuery(`SELECT * FROM guild_configs WHERE guildId = ${guild.id}`)
+        client.guildConfigs.set(guild.id, guildConfigs)
+        logger('app', 'info', `Configuration refreshed for guild ${guild.name} (${guild.id})`)
+
+    }
 }

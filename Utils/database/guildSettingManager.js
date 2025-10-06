@@ -16,10 +16,10 @@ export async function saveGuildSettings(guildId, guildSettings) {
             await executeQuery(query, guildId, systemName, JSON.stringify(systemConfig), JSON.stringify(systemConfig))
         }
 
-        logger('database', 'info', `Guild settings saved for guildId ${guildId}`)
+        logger('db', 'info', `Guild settings saved for guildId ${guildId}`)
 
     } catch (error) {
-        logger('database', 'error', `Error saving guild settings for guildId ${guildId} - ${error.stack}`)
+        logger('db', 'error', `Error saving guild settings for guildId ${guildId} - ${error.stack}`)
         throw error
     }
 }
@@ -40,7 +40,7 @@ export async function getGuildSettings(guildId) {
         }
         return guildSettings
     } catch (error) {
-        logger('database', 'error', `Error retrieving guild settings for guildId ${guildId} - ${error.stack}`)
+        logger('db', 'error', `Error retrieving guild settings for guildId ${guildId} - ${error.stack}`)
         throw error
     }
 }
