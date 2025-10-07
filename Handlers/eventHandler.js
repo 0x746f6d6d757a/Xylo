@@ -22,7 +22,7 @@ export async function eventHandler(client) {
 
     for (const file of eventsFiles) {
 
-        const eventModule = await import(pathToFileURL(file).href + `?update=${Date.now()}`)
+        const eventModule = await import(pathToFileURL(file).href)
         if (!eventModule || !eventModule.default) continue
 
         const execute = (...args) => eventModule.default.execute(...args, client)

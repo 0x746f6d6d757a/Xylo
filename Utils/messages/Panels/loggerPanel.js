@@ -9,7 +9,7 @@ function createEmbedPanel(configSettings, client) {
         .setDescription('Configure the logging settings for your guild using the buttons below.')
         .addFields(
             { name: 'Status', value: enabled ? 'Enabled' : 'Disabled', inline: true },
-            { name: 'Logging Level', value: `${loggingLevel}`, inline: true },
+            { name: 'Logging Level', value: `${loggingLevel}`, inline: true }, 
             { name: 'Category', value: categoryParentID ? `<#${categoryParentID}> (${categoryParentID})` : 'None', inline: true },
             { name: 'Admin Role', value: adminRoleId ? `<@&${adminRoleId}> (${adminRoleId})` : 'None', inline: true }
         )
@@ -40,7 +40,12 @@ function createButtonSettings(configSettings, interaction) {
         .setLabel('Set Category')
         .setStyle(ButtonStyle.Secondary)
 
-    return new ActionRowBuilder().addComponents(toggleButton, changeLevelButton, setAdminRoleButton, setCategoryButton)
+    const manageChannelsButton = new ButtonBuilder()
+        .setCustomId(`loggerSystem|${interaction.guildId}|manageChannels`)
+        .setLabel('Manage Channels')
+        .setStyle(ButtonStyle.Secondary)
+
+    return new ActionRowBuilder().addComponents(toggleButton, changeLevelButton, setAdminRoleButton, setCategoryButton, manageChannelsButton)
 
 }
 

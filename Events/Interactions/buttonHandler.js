@@ -1,4 +1,4 @@
-import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from "discord.js"
+import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
 import sendLoggerPanel from "../../Utils/messages/Panels/loggerPanel.js"
@@ -35,7 +35,7 @@ export default {
                         return await sendLoggerPanel(configSettings, interaction, client)
 
                     case 'changeLevel':
-
+                        
                         const textInputLevel = new TextInputBuilder()
                             .setCustomId('loggingLevelInput')
                             .setLabel('Enter a logging level (1-3)')
@@ -53,18 +53,101 @@ export default {
                         return await interaction.showModal(changeLevelModal)
 
                     case 'setAdminRole':
-                        // TODO: Show role select menu
-                        // configSettings.adminRoleId = newRoleId
-                        // updateGuildConfig(client, guildId, selectedSystem, configSettings)
-                        // return await sendLoggerPanel(configSettings, interaction, client)
-                        return interaction.reply({ content: "Set admin role feature coming soon!", flags: MessageFlags.Ephemeral })
+
+                        const textInputRole = new TextInputBuilder()
+                            .setCustomId('adminRoleInput')
+                            .setLabel('Enter the admin role ID')
+                            .setStyle(TextInputStyle.Short)
+                            .setPlaceholder('Admin Role ID')
+                            .setRequired(true)
+
+                        const changeRoleModal = new ModalBuilder()
+                            .setCustomId(`loggerSystem|${guildId}|changeRoleModal`)
+                            .setTitle('Change Admin Role')
+                            .setComponents(new ActionRowBuilder().addComponents(textInputRole))
+
+                        return await interaction.showModal(changeRoleModal)
 
                     case 'setCategory':
-                        // TODO: Show channel select menu for categories
-                        // configSettings.categoryParentID = newCategoryId
-                        // updateGuildConfig(client, guildId, selectedSystem, configSettings)
-                        // return await sendLoggerPanel(configSettings, interaction, client)
-                        return interaction.reply({ content: "Set category feature coming soon!", flags: MessageFlags.Ephemeral })
+                        const textInputCategory = new TextInputBuilder()
+                            .setCustomId('categoryInput')
+                            .setLabel('Enter the category ID')
+                            .setStyle(TextInputStyle.Short)
+                            .setPlaceholder('Category ID')
+                            .setRequired(true)
+
+                        const changeCategoryModal = new ModalBuilder()
+                            .setCustomId(`loggerSystem|${guildId}|changeCategoryModal`)
+                            .setTitle('Change Category')
+                            .setComponents(new ActionRowBuilder().addComponents(textInputCategory))
+
+                        return await interaction.showModal(changeCategoryModal)
+                    
+                    case 'manageChannels':
+                        configSettings.channels = configSettings.channels || {}
+                        
+                        const channelFields = [];
+                        
+                        // Group channels by category
+                        const channelGroups = {
+                            'Automod Logs': configSettings.channels.automod || {},
+                            'Guild Updates': configSettings.channels.guild || {},
+                            'Member Events': configSettings.channels.members || {},
+                            'Role Events': configSettings.channels.roles || {},
+                            'Invite Events': configSettings.channels.invites || {},
+                            'Channel Events': configSettings.channels.channels || {},
+                            'Message Events': configSettings.channels.messages || {},
+                            'Thread Events': configSettings.channels.threads || {},
+                            'Voice Events': configSettings.channels.voice || {}
+                        };
+
+                        // Create fields for each category
+                        for (const [categoryName, events] of Object.entries(channelGroups)) {
+                            const eventList = Object.entries(events)
+                                .map(([eventName, channelId]) => {
+                                    if (channelId) {
+                                        return `• ${eventName}: <#${channelId}>`;
+                                    }
+                                    return `• ${eventName}: *Not configured*`;
+                                })
+                                .join('\n');
+                            
+                            channelFields.push({ 
+                                name: categoryName, 
+                                value: eventList,
+                                inline: false 
+                            });
+                        }
+                        
+                        const channelsEmbed = new EmbedBuilder()
+                            .setTitle('Manage Logging Channels')
+                            .setDescription('Select an event from the dropdown to configure its logging channel.')
+                            .addFields(channelFields)
+                            .setColor(0x5865F2)
+                            .setFooter({ text: client.developer.footerText, iconURL: client.developer.icon })
+                            .setTimestamp()
+
+                        // Create select menu options for all events
+                        const selectOptions = [];
+                        for (const [categoryName, events] of Object.entries(channelGroups)) {
+                            for (const [eventName, channelId] of Object.entries(events)) {
+                                selectOptions.push({
+                                    label: eventName,
+                                    description: channelId ? `Currently: #${interaction.guild.channels.cache.get(channelId)?.name || 'Unknown'}` : 'Not configured',
+                                    value: `${Object.keys(channelGroups).find(k => channelGroups[k] === events)}:${eventName}`,
+                                    emoji: channelId ? '✅' : '❌'
+                                });
+                            }
+                        }
+
+                        const eventSelectMenu = new StringSelectMenuBuilder()
+                            .setCustomId(`loggerSystem|${guildId}|selectEvent`)
+                            .setPlaceholder('Select an event to configure')
+                            .addOptions(selectOptions.slice(0, 25)) // Discord limit: 25 options per select menu
+
+                        const selectRow = new ActionRowBuilder().addComponents(eventSelectMenu)
+                        
+                        return await interaction.update({ embeds: [channelsEmbed], components: [selectRow] })
 
                     default:
                         return interaction.reply({ content: "Unknown action.", flags: MessageFlags.Ephemeral })

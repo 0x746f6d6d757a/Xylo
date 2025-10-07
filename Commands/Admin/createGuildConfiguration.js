@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client, MessageFlags } from "discord.js"
+import { SlashCommandBuilder, ChatInputCommandInteraction, Client, MessageFlags, Events } from "discord.js"
 import executeQuery, { refreshClientConfigs } from "../../Utils/database/databaseManager.js"
 import logger from "../../Functions/logger.js"
 
@@ -39,6 +39,58 @@ export default {
             enabled: true,
             adminRoleId: null,
             categoryParentID: null,
+            channels: {
+                "automod": {
+                    "autoModerationActionExecution": null,
+                    "autoModerationRuleCreate": null,
+                    "autoModerationRuleDelete": null,
+                    "autoModerationRuleUpdate": null
+                },
+                "guild": {
+                    "guildUpdate": null
+                },
+                "members": {
+                    "guildMemberAdd": null,
+                    "guildMemberRemove": null,
+                    "guildMemberUpdate": null
+                },
+                "roles": {
+                    "roleCreate": null,
+                    "roleDelete": null,
+                    "roleUpdate": null
+                },
+                "invites": {
+                    "inviteCreate": null,
+                    "inviteDelete": null
+                },
+                "channels": {
+                    "channelCreate": null,
+                    "channelDelete": null,
+                    "channelUpdate": null,
+                    "channelPinsUpdate": null
+                },
+                "messages": {
+                    "messageCreate": null,
+                    "messageDelete": null,
+                    "messageUpdate": null,
+                    "messageDeleteBulk": null,
+                    "messagePollVoteAdd": null,
+                    "messagePollVoteRemove": null
+                },
+                "threads": {
+                    "threadCreate": null,
+                    "threadDelete": null,
+                    "threadUpdate": null,
+                    "threadListSync": null,
+                    "threadMemberUpdate": null,
+                    "threadMembersUpdate": null
+                },
+                "voice": {
+                    "voiceChannelEffectSend": null,
+                    "voiceServerUpdate": null,
+                    "voiceStateUpdate": null
+                }
+            },
             loggingLevel: 3
         }
 

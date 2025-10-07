@@ -10,7 +10,8 @@ export function parseCustomId(customId) {
     return {
         selectedSystem: parts[0],
         guildId: parts[1],
-        selectedAction: parts[2]
+        selectedAction: parts[2],
+        extraData: parts.slice(3)
     }
 }
 /**
