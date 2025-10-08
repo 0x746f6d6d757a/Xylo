@@ -176,7 +176,7 @@ export async function refreshClientConfigs(client) {
 
 // Queue to store pending updates
 const pendingUpdates = new Map()
-let flushTimeout = null;
+let flushTimeout = null
 
 /**
  * Updates guild configuration in client cache and queues database update
@@ -185,7 +185,7 @@ let flushTimeout = null;
  * @param {string} configType 
  * @param {Object} updatedSettings 
  */
-export function updateGuildConfig(client, guildId, configType, updatedSettings) {
+export async function updateGuildConfig(client, guildId, configType, updatedSettings) {
 
     let isValid = true
     switch (configType) {
@@ -201,13 +201,19 @@ export function updateGuildConfig(client, guildId, configType, updatedSettings) 
 
     if (!isValid) return logger('db', 'error', `Invalid configuration settings for type: ${configType}. Update aborted.`)
 
-    const key = `${guildId}:${configType}`;
-    client.guildConfigs.set(key, updatedSettings);
-    pendingUpdates.set(key, { guildId, configType, updatedSettings });
+    let guildSettings = client.guildConfigs.get(guildId) || []
+    let configToEdit = guildSettings.find(config => config.configType === configType)
     
-    // Debounce: If many updates happen quickly, delay flush slightly
-    if (flushTimeout) clearTimeout(flushTimeout);
-    flushTimeout = setTimeout(() => flushPendingUpdates(), 5000); // 5s debounce
+    if (configToEdit) {
+        configToEdit.configSettings = updatedSettings
+        client.guildConfigs.set(guildId, guildSettings)
+    }
+
+    const key = `${guildId}:${configType}`
+    pendingUpdates.set(key, { guildId, configType, updatedSettings })
+    
+    if (flushTimeout) clearTimeout(flushTimeout)
+    flushTimeout = setTimeout(() => flushPendingUpdates(), 5000) // 5s debounce
     
     logger('db', 'debug', `Queued config update for ${key}`)
 }

@@ -70,7 +70,5 @@ process.on('SIGTERM', async () => {
     process.exit(0)
 })
 
-// Start config update interval (flush every 30 seconds)
 startConfigUpdateInterval(30000)
-
 client.login(process.env.BOT_TOKEN)

@@ -21,10 +21,7 @@ export default {
         try {
             await command.execute(interaction, client)
         } catch (error) {
-            logger('event', 'error', `Error executing ${interaction.commandName}.\nError: ${error}`)
-            (interaction.replied || interaction.deferred) ?
-                await interaction.followUp({ content: 'There was an error while executing this command!\n' + error, flags: MessageFlags.Ephemeral }) :
-                await interaction.reply({ content: 'There was an error while executing this command!\n' + error, flags: MessageFlags.Ephemeral })
+            throw error
         }
 
     }

@@ -1,7 +1,8 @@
 import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
-import sendLoggerPanel from "../../Utils/messages/Panels/loggerPanel.js"
+import { sendChannelManagementPanel, sendLoggerPanel } from "../../Utils/messages/Panels/loggerPanel.js"
+import { sendSettingsMenu } from "../../Utils/messages/Panels/settingsPanel.js"
 
 export default {
     name: Events.InteractionCreate,
@@ -17,6 +18,16 @@ export default {
         const { selectedSystem, guildId, selectedAction } = parseCustomId(customId)
 
         if(guildId !== interaction.guildId) return interaction.reply({ content: "This interaction does not belong to this guild.", flags: MessageFlags.Ephemeral })
+
+        if (selectedSystem === 'changeSettings') {
+            switch(selectedAction) {
+                case 'mainMenu':
+                    return await sendSettingsMenu(interaction, client)
+
+                default:
+                    return interaction.reply({ content: "Unknown action.", flags: MessageFlags.Ephemeral })
+            }
+        }
 
         let guildSettings = client.guildConfigs.get(guildId) || []
         if(!guildSettings || guildSettings.length === 0) return interaction.reply({ content: "Guild settings could not be found. Please contact support.", flags: MessageFlags.Ephemeral })
@@ -84,70 +95,10 @@ export default {
                         return await interaction.showModal(changeCategoryModal)
                     
                     case 'manageChannels':
-                        configSettings.channels = configSettings.channels || {}
-                        
-                        const channelFields = [];
-                        
-                        // Group channels by category
-                        const channelGroups = {
-                            'Automod Logs': configSettings.channels.automod || {},
-                            'Guild Updates': configSettings.channels.guild || {},
-                            'Member Events': configSettings.channels.members || {},
-                            'Role Events': configSettings.channels.roles || {},
-                            'Invite Events': configSettings.channels.invites || {},
-                            'Channel Events': configSettings.channels.channels || {},
-                            'Message Events': configSettings.channels.messages || {},
-                            'Thread Events': configSettings.channels.threads || {},
-                            'Voice Events': configSettings.channels.voice || {}
-                        };
+                        return await sendChannelManagementPanel(configSettings, interaction, client)
 
-                        // Create fields for each category
-                        for (const [categoryName, events] of Object.entries(channelGroups)) {
-                            const eventList = Object.entries(events)
-                                .map(([eventName, channelId]) => {
-                                    if (channelId) {
-                                        return `• ${eventName}: <#${channelId}>`;
-                                    }
-                                    return `• ${eventName}: *Not configured*`;
-                                })
-                                .join('\n');
-                            
-                            channelFields.push({ 
-                                name: categoryName, 
-                                value: eventList,
-                                inline: false 
-                            });
-                        }
-                        
-                        const channelsEmbed = new EmbedBuilder()
-                            .setTitle('Manage Logging Channels')
-                            .setDescription('Select an event from the dropdown to configure its logging channel.')
-                            .addFields(channelFields)
-                            .setColor(0x5865F2)
-                            .setFooter({ text: client.developer.footerText, iconURL: client.developer.icon })
-                            .setTimestamp()
-
-                        // Create select menu options for all events
-                        const selectOptions = [];
-                        for (const [categoryName, events] of Object.entries(channelGroups)) {
-                            for (const [eventName, channelId] of Object.entries(events)) {
-                                selectOptions.push({
-                                    label: eventName,
-                                    description: channelId ? `Currently: #${interaction.guild.channels.cache.get(channelId)?.name || 'Unknown'}` : 'Not configured',
-                                    value: `${Object.keys(channelGroups).find(k => channelGroups[k] === events)}:${eventName}`,
-                                    emoji: channelId ? '✅' : '❌'
-                                });
-                            }
-                        }
-
-                        const eventSelectMenu = new StringSelectMenuBuilder()
-                            .setCustomId(`loggerSystem|${guildId}|selectEvent`)
-                            .setPlaceholder('Select an event to configure')
-                            .addOptions(selectOptions.slice(0, 25)) // Discord limit: 25 options per select menu
-
-                        const selectRow = new ActionRowBuilder().addComponents(eventSelectMenu)
-                        
-                        return await interaction.update({ embeds: [channelsEmbed], components: [selectRow] })
+                    case 'mainMenu':
+                        return await sendLoggerPanel(configSettings, interaction, client)
 
                     default:
                         return interaction.reply({ content: "Unknown action.", flags: MessageFlags.Ephemeral })

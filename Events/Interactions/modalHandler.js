@@ -1,7 +1,7 @@
 import { Client, Events, MessageFlags, ModalSubmitInteraction } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
-import sendLoggerPanel from "../../Utils/messages/Panels/loggerPanel.js"
+import { sendChannelManagementPanel, sendLoggerPanel } from "../../Utils/messages/Panels/loggerPanel.js"
 
 export default {
     name: Events.InteractionCreate,
@@ -40,13 +40,13 @@ export default {
                         updateGuildConfig(client, guildId, selectedSystem, configSettings)
                         return await sendLoggerPanel(configSettings, interaction, client)
                     
-                    case 'setAdminRoleModal':
+                    case 'changeRoleModal':
                         const adminRoleInputId = interaction.fields.getTextInputValue('adminRoleInput').trim()
                         const adminRole = interaction.guild.roles.cache.get(adminRoleInputId)
                         if (!adminRole) return interaction.reply({ content: "Invalid role ID. Please enter a valid role ID from this server.", flags: MessageFlags.Ephemeral })
 
                         configSettings.adminRole = adminRole.id
-                        updateGuildConfig(client, guildId, selectedSystem, configSettings)
+                        await updateGuildConfig(client, guildId, selectedSystem, configSettings)
                         return await sendLoggerPanel(configSettings, interaction, client)
 
                     case 'changeCategoryModal':
@@ -60,14 +60,35 @@ export default {
 
                     case 'setChannelModal':
                         if (!extraPart) return interaction.reply({ content: "No event specified for setting channel.", flags: MessageFlags.Ephemeral })
-                        console.log(extraPart, fields)
-                        return interaction.reply({ content: "Set Channel modal received. (Functionality not yet implemented)", flags: MessageFlags.Ephemeral })
+                        
+                        const channelInputId = interaction.fields.getTextInputValue('channelInput').trim()
+                        const logChannel = interaction.guild.channels.cache.get(channelInputId)
+                        if (!logChannel || logChannel.type !== 0) return interaction.reply({ content: "Invalid channel ID. Please enter a valid text channel ID from this server.", flags: MessageFlags.Ephemeral })
+                        
+                        let eventFound = false
+                        for (const [categoryKey, categoryEvents] of Object.entries(configSettings.channels)) {
+                            if (categoryEvents && typeof categoryEvents === 'object') {
+                                for (const [eventName, channelId] of Object.entries(categoryEvents)) {
+                                    if (eventName === extraPart) {
+                                        configSettings.channels[categoryKey][eventName] = logChannel.id
+                                        eventFound = true
+                                        break
+                                    }
+                                }
+                            }
+                            if (eventFound) break
+                        }
+                        
+                        if (!eventFound) return interaction.reply({ content: "Event not found in configuration.", flags: MessageFlags.Ephemeral })
+                        
+                        configToEdit.configSettings = configSettings
+                        updateGuildConfig(client, guildId, selectedSystem, configSettings)
+                        return await sendChannelManagementPanel(configSettings, interaction, client)
 
                     default:
                         return interaction.reply({ content: "Unknown action for logger system.", flags: MessageFlags.Ephemeral })
 
                 }
-
             default:
                 return interaction.reply({ content: "Unknown configuration system.", flags: MessageFlags.Ephemeral })
         }

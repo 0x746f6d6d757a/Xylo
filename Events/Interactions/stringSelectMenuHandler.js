@@ -1,6 +1,6 @@
-import { ActionRowBuilder, Events, MessageFlags, ModalBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction, TextInputBuilder, TextInputStyle } from "discord.js"
+import { ActionRowBuilder, ButtonBuilder, Events, MessageFlags, ModalBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction, TextInputBuilder, TextInputStyle } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
-import sendLoggerPanel from "../../Utils/messages/Panels/loggerPanel.js"
+import { sendLoggerPanel } from "../../Utils/messages/Panels/loggerPanel.js"
 
 
 export default {
@@ -76,56 +76,40 @@ export default {
                                     value: 'setChannel',
                                 },
                                 {
+                                    label: 'Edit Channel',
+                                    description: 'Edit logging channel for this event',
+                                    value: 'editChannel',
+                                },
+                                {
                                     label: 'Remove Channel',
                                     description: 'Remove logging channel from this event',
                                     value: 'removeChannel',
-                                },
-                                {
-                                    label: 'Back',
-                                    description: 'Go back to event selection',
-                                    value: 'back',
                                 }
                             ])
 
                         const actionRow = new ActionRowBuilder().addComponents(actionSelectMenu)
-                        
+                        const originalNavigationButtons = interaction.message.components[1].components.map(component => ButtonBuilder.from(component) )
                         const originalMenu = StringSelectMenuBuilder.from(interaction.message.components[0].components[0])
+
                         originalMenu.options.forEach(option => { option.data.default = option.data.value === selectedValue })
 
                         const originalSelectRow = new ActionRowBuilder().addComponents(originalMenu)
-                        
-                        return await interaction.update({ components: [originalSelectRow, actionRow] })
+                        const originalNavigationRow = new ActionRowBuilder().addComponents(...originalNavigationButtons)
+
+                        return await interaction.update({ components: [originalSelectRow, actionRow, originalNavigationRow ] })
 
                     case 'selectAction':
                         switch (selectedValue) { 
-
+                            
                             case 'setChannel':
 
                                 const categoryFromEvent = Object.keys(configSettings.channels).find(category => 
                                     configSettings.channels[category] && configSettings.channels[category][extraPart] !== undefined
-                                );
+                                )
                                 
-                                // Get existing parent ID and channel ID if they exist
-                                const existingParentId = configSettings.categoryParentID || ''
-                                const parentChannel = interaction.guild.channels.cache.get(existingParentId)
-                                const isValidCategory = parentChannel && parentChannel.type === 4 
-
-                                console.log('Existing Parent ID:', existingParentId)
-                                console.log('Is Valid Category:', isValidCategory)
-
-
                                 const existingChannelId = categoryFromEvent && configSettings.channels[categoryFromEvent][extraPart] 
                                     ? configSettings.channels[categoryFromEvent][extraPart] 
                                     : ''
-                                
-                                const parentChannelInput = new TextInputBuilder()
-                                    .setCustomId('parentChannelInput')
-                                    .setLabel('Parent Category ID')
-                                    .setPlaceholder('Enter the category channel ID')
-                                    .setStyle(TextInputStyle.Short)
-                                    .setRequired(false)
-                                
-                                if (isValidCategory) parentChannelInput.setValue(parentChannel.id)
                                 
                                 const channelInput = new TextInputBuilder()
                                     .setCustomId('channelInput')
@@ -137,10 +121,9 @@ export default {
                                 if (existingChannelId) channelInput.setValue(existingChannelId)
                                 
                                 const modalFillInfo = new ModalBuilder()
-                                    .setCustomId(`loggerSystem|${guildId}|setChannelModal_${selectedValue}`)
+                                    .setCustomId(`loggerSystem|${guildId}|setChannelModal_${extraPart}`)
                                     .setTitle('Set Logging Channel')
                                     .addComponents(
-                                        new ActionRowBuilder().addComponents(parentChannelInput),
                                         new ActionRowBuilder().addComponents(channelInput)
                                     )
                                 
