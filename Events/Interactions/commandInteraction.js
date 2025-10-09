@@ -1,5 +1,5 @@
 import { Events, ChatInputCommandInteraction, MessageFlags, Client } from "discord.js"
-import logger from "../../Functions/logger.js"
+import logger, { LogType } from "../../Functions/logger.js"
 
 export default {
     name: Events.InteractionCreate,
@@ -13,7 +13,7 @@ export default {
         const command = client.commands.get(interaction.commandName)
 
         if (!command) {
-            logger('event', 'error', `No command matching ${interaction.commandName} was found.`)
+            logger(LogType.APP, LogType.ERROR, `No command matching ${interaction.commandName} was found.`)
             await interaction.reply({ content: "This command is not working, please reach out to support.", flags: MessageFlags.Ephemeral })
             return
         }

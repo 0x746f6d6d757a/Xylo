@@ -1,5 +1,6 @@
 import { glob } from "glob"
 import path from "path"
+import { LogType } from "./logger"
 
 export default async function loadFiles(directory) {
 
@@ -8,7 +9,7 @@ export default async function loadFiles(directory) {
         const jsFiles = files.filter(file => path.extname(file) === '.js')
         return jsFiles
     } catch (error) {
-        logger('app', 'error', `Error loading files: ${error}`)
+        logger(LogType.APP, LogType.ERROR, `Error loading files: ${error}`)
         return []
     }
 }

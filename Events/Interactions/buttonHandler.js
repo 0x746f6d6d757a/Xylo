@@ -60,7 +60,7 @@ export default {
                         const changeLevelModal = new ModalBuilder()
                             .setCustomId(`loggerSystem|${guildId}|changeLevelModal`)
                             .setTitle('Change Logging Level')
-                            .setComponents(new ActionRowBuilder().addComponents(textInputLevel))
+                            .setLabelComponents(new ActionRowBuilder().addComponents(textInputLevel))
 
                         return await interaction.showModal(changeLevelModal)
 
