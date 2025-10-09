@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, Client, MessageFlags, StringSelectMenuBuilder, EmbedBuilder, ActionRowBuilder } from 'discord.js'
 import executeQuery from '../../Utils/database/databaseManager.js'
 import logger from '../../Functions/logger.js'
-import { sendSettingsMenu } from '../../Utils/messages/Panels/settingsPanel.js'
+import { sendSettingsMenu } from '../../Utils/messages/SettingPanel/sendPanel.js'
 
 export default {
     data: new SlashCommandBuilder()
@@ -28,6 +28,9 @@ export default {
 
         logger('db', 'info', `Starting settings change for guild ${interaction.guild.name} (${guildId})...`)
 
-        return await sendSettingsMenu(interaction, client)
+        const guildSettings = client.guildConfigs.get(guildId) || []
+        if (!guildSettings || guildSettings.length === 0) return interaction.editReply({ content: "Guild settings could not be found. Please contact support." })
+
+        return await sendSettingsMenu(interaction, client, guildSettings)
     }
 }

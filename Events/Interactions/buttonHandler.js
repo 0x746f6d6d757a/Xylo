@@ -1,8 +1,8 @@
 import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
-import { sendChannelManagementPanel, sendLoggerPanel } from "../../Utils/messages/Panels/loggerPanel.js"
-import { sendSettingsMenu } from "../../Utils/messages/Panels/settingsPanel.js"
+import { sendLoggerChannelSettingsPanel, sendLoggerPanel } from "../../Utils/messages/LoggerPanel/sendPanel.js"
+import { sendSettingsMenu } from "../../Utils/messages/SettingPanel/sendPanel.js"
 
 export default {
     name: Events.InteractionCreate,
@@ -14,23 +14,24 @@ export default {
 
         if(!interaction.isButton()) return
 
-        const { customId, message } = interaction
+        const { customId } = interaction
         const { selectedSystem, guildId, selectedAction } = parseCustomId(customId)
 
         if(guildId !== interaction.guildId) return interaction.reply({ content: "This interaction does not belong to this guild.", flags: MessageFlags.Ephemeral })
 
+        let guildSettings = client.guildConfigs.get(guildId) || []
+        if(!guildSettings || guildSettings.length === 0) return interaction.reply({ content: "Guild settings could not be found. Please contact support.", flags: MessageFlags.Ephemeral })
+
         if (selectedSystem === 'changeSettings') {
             switch(selectedAction) {
                 case 'mainMenu':
-                    return await sendSettingsMenu(interaction, client)
+                    return await sendSettingsMenu(interaction, client, guildSettings)
 
                 default:
                     return interaction.reply({ content: "Unknown action.", flags: MessageFlags.Ephemeral })
             }
         }
 
-        let guildSettings = client.guildConfigs.get(guildId) || []
-        if(!guildSettings || guildSettings.length === 0) return interaction.reply({ content: "Guild settings could not be found. Please contact support.", flags: MessageFlags.Ephemeral })
 
         let configToEdit = guildSettings.find(config => config.configType === selectedSystem)
         if(!configToEdit) return interaction.reply({ content: "Selected configuration could not be found. Please contact support.", flags: MessageFlags.Ephemeral })
@@ -43,7 +44,7 @@ export default {
                     case 'toggle':
                         configSettings.enabled = !configSettings.enabled
                         updateGuildConfig(client, guildId, selectedSystem, configSettings)
-                        return await sendLoggerPanel(configSettings, interaction, client)
+                        return await sendLoggerPanel(interaction, client, configSettings)
 
                     case 'changeLevel':
                         
@@ -63,42 +64,11 @@ export default {
 
                         return await interaction.showModal(changeLevelModal)
 
-                    case 'setAdminRole':
-
-                        const textInputRole = new TextInputBuilder()
-                            .setCustomId('adminRoleInput')
-                            .setLabel('Enter the admin role ID')
-                            .setStyle(TextInputStyle.Short)
-                            .setPlaceholder('Admin Role ID')
-                            .setRequired(true)
-
-                        const changeRoleModal = new ModalBuilder()
-                            .setCustomId(`loggerSystem|${guildId}|changeRoleModal`)
-                            .setTitle('Change Admin Role')
-                            .setComponents(new ActionRowBuilder().addComponents(textInputRole))
-
-                        return await interaction.showModal(changeRoleModal)
-
-                    case 'setCategory':
-                        const textInputCategory = new TextInputBuilder()
-                            .setCustomId('categoryInput')
-                            .setLabel('Enter the category ID')
-                            .setStyle(TextInputStyle.Short)
-                            .setPlaceholder('Category ID')
-                            .setRequired(true)
-
-                        const changeCategoryModal = new ModalBuilder()
-                            .setCustomId(`loggerSystem|${guildId}|changeCategoryModal`)
-                            .setTitle('Change Category')
-                            .setComponents(new ActionRowBuilder().addComponents(textInputCategory))
-
-                        return await interaction.showModal(changeCategoryModal)
-                    
                     case 'manageChannels':
-                        return await sendChannelManagementPanel(configSettings, interaction, client)
+                        return await sendLoggerChannelSettingsPanel(interaction, client, configSettings)
 
                     case 'mainMenu':
-                        return await sendLoggerPanel(configSettings, interaction, client)
+                        return await sendLoggerPanel(interaction, client, configSettings)
 
                     default:
                         return interaction.reply({ content: "Unknown action.", flags: MessageFlags.Ephemeral })

@@ -1,6 +1,8 @@
-import { ActionRowBuilder, ButtonBuilder, Events, MessageFlags, ModalBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction, TextInputBuilder, TextInputStyle } from "discord.js"
+import { ActionRowBuilder, ButtonBuilder, Events, MessageFlags, ModalBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction, TextInputBuilder, TextInputStyle, ButtonStyle } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
-import { sendLoggerPanel } from "../../Utils/messages/Panels/loggerPanel.js"
+import { sendLoggerPanel, sendLoggerChannelSettingsPanel, sendCategoryEventManagementPanel, sendCategoryActionPanel } from "../../Utils/messages/LoggerPanel/sendPanel.js"
+import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
+import { getCategoryActionMenu } from "../../Utils/messages/LoggerPanel/buttonsCreation.js"
 
 
 export default {
@@ -17,9 +19,8 @@ export default {
         let { guildId, selectedSystem, selectedAction, extraData } = parseCustomId(customId)
         if(selectedAction.includes('_')) [selectedAction, extraPart] = selectedAction.split('_')
 
-        const selectedValue = values[0] // Assuming single select menu
+        const selectedValue = values[0]
 
-        // Ensure the interaction is for the correct guild
         if (guildId !== interaction.guildId) return interaction.reply({ content: "This interaction does not belong to this guild.", flags: MessageFlags.Ephemeral })
         
         switch (selectedSystem) {
@@ -34,12 +35,14 @@ export default {
                         let configToEdit = guildSettings.find(config => config.configType === selectedValue)
                         if (!configToEdit) return interaction.update({ content: "Selected configuration could not be found. Please contact support.", embeds: [], components: [] })
 
-                        let configSettings = configToEdit.configSettings ? JSON.parse(configToEdit.configSettings) : {}
+                        let configSettings = typeof configToEdit.configSettings === 'string' 
+                            ? JSON.parse(configToEdit.configSettings) 
+                            : configToEdit.configSettings
 
                         switch (selectedValue) {
 
                             case 'loggerSystem':
-                                return await sendLoggerPanel(configSettings, interaction, client)
+                                return await sendLoggerPanel(interaction, client, configSettings)
 
                             default:
                                 return interaction.update({ content: "This configuration panel is not yet implemented.", embeds: [], components: [] })
@@ -63,32 +66,14 @@ export default {
 
                 switch (selectedAction) {
 
-                    case 'selectEvent':
-                        const [categoryKey, selectedEvent] = selectedValue.split(':')
-                        
-                        const actionSelectMenu = new StringSelectMenuBuilder()
-                            .setCustomId(`loggerSystem|${guildId}|selectAction_${selectedEvent}`)
-                            .setPlaceholder('Choose an action...')
-                            .addOptions([
-                                {
-                                    label: 'Set Channel',
-                                    description: 'Configure logging channel for this event',
-                                    value: 'setChannel',
-                                },
-                                {
-                                    label: 'Edit Channel',
-                                    description: 'Edit logging channel for this event',
-                                    value: 'editChannel',
-                                },
-                                {
-                                    label: 'Remove Channel',
-                                    description: 'Remove logging channel from this event',
-                                    value: 'removeChannel',
-                                }
-                            ])
+                    case 'selectCategory':
+                        const categoryData = configSettings.channels[selectedValue]
+                        if (!categoryData) return interaction.reply({ content: "Category not found.", flags: MessageFlags.Ephemeral })
+
+                        const actionSelectMenu = getCategoryActionMenu(selectedValue, categoryData, interaction)
 
                         const actionRow = new ActionRowBuilder().addComponents(actionSelectMenu)
-                        const originalNavigationButtons = interaction.message.components[1].components.map(component => ButtonBuilder.from(component) )
+                        const originalNavigationButtons = interaction.message.components[1].components.map(component => ButtonBuilder.from(component))
                         const originalMenu = StringSelectMenuBuilder.from(interaction.message.components[0].components[0])
 
                         originalMenu.options.forEach(option => { option.data.default = option.data.value === selectedValue })
@@ -96,57 +81,58 @@ export default {
                         const originalSelectRow = new ActionRowBuilder().addComponents(originalMenu)
                         const originalNavigationRow = new ActionRowBuilder().addComponents(...originalNavigationButtons)
 
-                        return await interaction.update({ components: [originalSelectRow, actionRow, originalNavigationRow ] })
+                        return await interaction.update({ components: [originalSelectRow, actionRow, originalNavigationRow] })
 
-                    case 'selectAction':
-                        switch (selectedValue) { 
-                            
-                            case 'setChannel':
+                    case 'selectCategoryAction':
+                        const category = configSettings.channels[extraPart]
+                        if (!category) return interaction.reply({ content: "Category not found.", flags: MessageFlags.Ephemeral })
 
-                                const categoryFromEvent = Object.keys(configSettings.channels).find(category => 
-                                    configSettings.channels[category] && configSettings.channels[category][extraPart] !== undefined
-                                )
+                        switch (selectedValue) {
+                            case 'toggleCategory':
+                                category.enabled = !category.enabled
+                                updateGuildConfig(client, guildId, selectedSystem, configSettings)
                                 
-                                const existingChannelId = categoryFromEvent && configSettings.channels[categoryFromEvent][extraPart] 
-                                    ? configSettings.channels[categoryFromEvent][extraPart] 
-                                    : ''
+                                return sendCategoryActionPanel(interaction, client, configSettings, extraPart)
+
+                            case 'setChannel':
+                                const existingChannelId = category.channelId || ''
                                 
                                 const channelInput = new TextInputBuilder()
                                     .setCustomId('channelInput')
                                     .setLabel('Logging Channel ID')
-                                    .setPlaceholder('Enter the logging channel ID')
+                                    .setPlaceholder('Enter the logging channel ID for this category')
                                     .setStyle(TextInputStyle.Short)
                                     .setRequired(true)
                                 
                                 if (existingChannelId) channelInput.setValue(existingChannelId)
                                 
                                 const modalFillInfo = new ModalBuilder()
-                                    .setCustomId(`loggerSystem|${guildId}|setChannelModal_${extraPart}`)
-                                    .setTitle('Set Logging Channel')
+                                    .setCustomId(`loggerSystem|${guildId}|setCategoryChannelModal_${extraPart}`)
+                                    .setTitle(`Set Channel for ${extraPart}`)
                                     .addComponents(
                                         new ActionRowBuilder().addComponents(channelInput)
                                     )
                                 
                                 return await interaction.showModal(modalFillInfo)
 
-                            case 'removeChannel':
-                                console.log('Remove channel for', selectedValue)
-                                break
-                            case 'back':
-                                console.log('Back to event selection')
-                                break
-                            default:
-                                return interaction.reply({ content: "Unknown action selected.", flags: MessageFlags.Ephemeral })
-                        }
-                        break
+                            case 'manageEvents':
+                                return sendCategoryEventManagementPanel(interaction, client, configSettings, extraPart)
 
+                            default:
+                                return interaction.reply({ content: "Unknown action.", flags: MessageFlags.Ephemeral })
+                        }
+
+                    case 'selectEvent':
+                        const cat = configSettings.channels[extraPart]
+                        if (!cat || !cat.events[selectedValue]) return interaction.reply({ content: "Event not found.", flags: MessageFlags.Ephemeral })
+
+                        cat.events[selectedValue].enabled = !cat.events[selectedValue].enabled
+                        updateGuildConfig(client, guildId, selectedSystem, configSettings)
+
+                        return sendCategoryEventManagementPanel(interaction, client, configSettings, extraPart)
 
                     default:
-
                         return interaction.reply({ content: "Unknown action for logger system.", flags: MessageFlags.Ephemeral })
-
-                        
-
                 }
                 break
 

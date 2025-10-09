@@ -37,118 +37,153 @@ export default {
 
         let loggerConfig = {
             enabled: true,
-            adminRoleId: null,
-            categoryParentID: null,
             channels: {
                 "automod": {
-                    "autoModerationActionExecution": null,
-                    "autoModerationRuleCreate": null,
-                    "autoModerationRuleDelete": null,
-                    "autoModerationRuleUpdate": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "autoModerationActionExecution": { enabled: false },
+                        "autoModerationRuleCreate":      { enabled: false },
+                        "autoModerationRuleDelete":      { enabled: false },
+                        "autoModerationRuleUpdate":      { enabled: false }
+                    }
                 },
                 "guild": {
-                    "guildUpdate": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "guildUpdate": { enabled: false }
+                    }
                 },
                 "members": {
-                    "guildMemberAdd": null,
-                    "guildMemberRemove": null,
-                    "guildMemberUpdate": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "guildMemberAdd":    { enabled: false },
+                        "guildMemberRemove": { enabled: false },
+                        "guildMemberUpdate": { enabled: false }
+                    }
                 },
                 "roles": {
-                    "roleCreate": null,
-                    "roleDelete": null,
-                    "roleUpdate": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "roleCreate": { enabled: false },
+                        "roleDelete": { enabled: false },
+                        "roleUpdate": { enabled: false }
+                    }
                 },
                 "invites": {
-                    "inviteCreate": null,
-                    "inviteDelete": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "inviteCreate": { enabled: false },
+                        "inviteDelete": { enabled: false }
+                    }
                 },
                 "channels": {
-                    "channelCreate": null,
-                    "channelDelete": null,
-                    "channelUpdate": null,
-                    "channelPinsUpdate": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "channelCreate":     { enabled: false },
+                        "channelDelete":     { enabled: false },
+                        "channelUpdate":     { enabled: false },
+                        "channelPinsUpdate": { enabled: false }
+                    }
                 },
                 "messages": {
-                    "messageCreate": null,
-                    "messageDelete": null,
-                    "messageUpdate": null,
-                    "messageDeleteBulk": null,
-                    "messagePollVoteAdd": null,
-                    "messagePollVoteRemove": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "messageCreate":         { enabled: false },
+                        "messageDelete":         { enabled: false },
+                        "messageUpdate":         { enabled: false },
+                        "messageDeleteBulk":     { enabled: false },
+                        "messagePollVoteAdd":    { enabled: false },
+                        "messagePollVoteRemove": { enabled: false }
+                    }
                 },
                 "threads": {
-                    "threadCreate": null,
-                    "threadDelete": null,
-                    "threadUpdate": null,
-                    "threadListSync": null,
-                    "threadMemberUpdate": null,
-                    "threadMembersUpdate": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "threadCreate":         { enabled: false },
+                        "threadDelete":         { enabled: false },
+                        "threadUpdate":         { enabled: false },
+                        "threadListSync":       { enabled: false },
+                        "threadMemberUpdate":   { enabled: false },
+                        "threadMembersUpdate":  { enabled: false }
+                    }
                 },
                 "voice": {
-                    "voiceChannelEffectSend": null,
-                    "voiceServerUpdate": null,
-                    "voiceStateUpdate": null
+                    enabled: false,
+                    channelId: null,
+                    events: {
+                        "voiceChannelEffectSend": { enabled: false },
+                        "voiceServerUpdate":      { enabled: false },
+                        "voiceStateUpdate":       { enabled: false }
+                    }
                 }
             },
             loggingLevel: 3
         }
 
         await executeQuery(defaultConfigQuery, guildId, 'loggerSystem', JSON.stringify(loggerConfig))
-        let ticketSystemConfig = {
-            enabled: true,                              // Ticket system on/off
-            modality: "channel",                        // "channel" or "thread"
-            type: "buttons",                            // "buttons" or "select"
-            generalCategoryID: null,                    // Where ticket channels are created
-            ticketLimit: 1,                             // Max tickets per user
-            rolesInTicket: [],                          // Roles auto-added to ticket
-            usersInTicket: [interaction.guild.ownerId], // Users always added
+        
+        // let ticketSystemConfig = {
+        //     enabled: true,                              // Ticket system on/off
+        //     modality: "channel",                        // "channel" or "thread"
+        //     type: "buttons",                            // "buttons" or "select"
+        //     generalCategoryID: null,                    // Where ticket channels are created
+        //     ticketLimit: 1,                             // Max tickets per user
+        //     rolesInTicket: [],                          // Roles auto-added to ticket
+        //     usersInTicket: [interaction.guild.ownerId], // Users always added
 
-            // Panel shown to users before ticket creation
-            ticketPanelEmbed: {
-                title: "Ticket System | Powered by Xylo",
-                description: "Please select a ticket category from below.",
-                color: 0x0099ff,
-            },
+        //     // Panel shown to users before ticket creation
+        //     ticketPanelEmbed: {
+        //         title: "Ticket System | Powered by Xylo",
+        //         description: "Please select a ticket category from below.",
+        //         color: 0x0099ff,
+        //     },
 
-            ticketSettingsEmbed: {
-                title: "Welcome to your ticket!",
-                description: "Please describe your issue and a staff member will help you shortly.",
-                color: 0x00ff99,
-            },
-            settings: {
-                buttons: [
-                    {
-                        label: "General Support",
-                        style: "Primary",
-                        emoji: "📩",
-                        categoryId: null,
-                    },
-                    {
-                        label: "Report a Bug",
-                        style: "Danger",
-                        emoji: "🐞",
-                        categoryId: null,
-                    }
-                ],
-                select: [
-                    {
-                        label: "General Support",
-                        description: "Open a ticket for general help",
-                        value: "general_support",
-                        categoryId: null,
-                    },
-                    {
-                        label: "Bug Report",
-                        description: "Open a ticket to report a bug",
-                        value: "bug_report",
-                        categoryId: null,
-                    }
-                ]
-            }
-        }
+        //     ticketSettingsEmbed: {
+        //         title: "Welcome to your ticket!",
+        //         description: "Please describe your issue and a staff member will help you shortly.",
+        //         color: 0x00ff99,
+        //     },
+        //     settings: {
+        //         buttons: [
+        //             {
+        //                 label: "General Support",
+        //                 style: "Primary",
+        //                 emoji: "📩",
+        //                 categoryId: null,
+        //             },
+        //             {
+        //                 label: "Report a Bug",
+        //                 style: "Danger",
+        //                 emoji: "🐞",
+        //                 categoryId: null,
+        //             }
+        //         ],
+        //         select: [
+        //             {
+        //                 label: "General Support",
+        //                 description: "Open a ticket for general help",
+        //                 value: "general_support",
+        //                 categoryId: null,
+        //             },
+        //             {
+        //                 label: "Bug Report",
+        //                 description: "Open a ticket to report a bug",
+        //                 value: "bug_report",
+        //                 categoryId: null,
+        //             }
+        //         ]
+        //     }
+        // }
 
-        await executeQuery(defaultConfigQuery, guildId, 'ticketSystem', JSON.stringify(ticketSystemConfig))
+        // await executeQuery(defaultConfigQuery, guildId, 'ticketSystem', JSON.stringify(ticketSystemConfig))
 
         // // verificationSystem config
         // let verificationSystemConfig = {

@@ -1,7 +1,7 @@
-import { Client, Events, MessageFlags, ModalSubmitInteraction } from "discord.js"
+import { Client, Events, MessageFlags, ModalSubmitInteraction, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
-import { sendChannelManagementPanel, sendLoggerPanel } from "../../Utils/messages/Panels/loggerPanel.js"
+import { sendLoggerChannelSettingsPanel, sendLoggerPanel, sendCategoryActionPanel } from "../../Utils/messages/LoggerPanel/sendPanel.js"
 
 export default {
     name: Events.InteractionCreate,
@@ -17,7 +17,6 @@ export default {
         let { guildId, selectedSystem, selectedAction } = parseCustomId(customId)
         if(selectedAction.includes('_')) [selectedAction, extraPart] = selectedAction.split('_')
 
-        // Ensure the interaction is for the correct guild
         if (guildId !== interaction.guildId) return interaction.reply({ content: "This interaction does not belong to this guild.", flags: MessageFlags.Ephemeral })
 
         let guildSettings = client.guildConfigs.get(guildId) || []
@@ -38,52 +37,24 @@ export default {
 
                         configSettings.loggingLevel = newLevel
                         updateGuildConfig(client, guildId, selectedSystem, configSettings)
-                        return await sendLoggerPanel(configSettings, interaction, client)
-                    
-                    case 'changeRoleModal':
-                        const adminRoleInputId = interaction.fields.getTextInputValue('adminRoleInput').trim()
-                        const adminRole = interaction.guild.roles.cache.get(adminRoleInputId)
-                        if (!adminRole) return interaction.reply({ content: "Invalid role ID. Please enter a valid role ID from this server.", flags: MessageFlags.Ephemeral })
+                        return sendLoggerPanel(interaction, client, configSettings)
 
-                        configSettings.adminRole = adminRole.id
-                        await updateGuildConfig(client, guildId, selectedSystem, configSettings)
-                        return await sendLoggerPanel(configSettings, interaction, client)
-
-                    case 'changeCategoryModal':
-                        const categoryInputId = interaction.fields.getTextInputValue('categoryInput').trim()
-                        const categoryChannel = interaction.guild.channels.cache.get(categoryInputId)
-                        if (!categoryChannel || categoryChannel.type !== 4) return interaction.reply({ content: "Invalid category ID. Please enter a valid category ID from this server.", flags: MessageFlags.Ephemeral })
-
-                        configSettings.categoryParentID = categoryChannel.id
-                        updateGuildConfig(client, guildId, selectedSystem, configSettings)
-                        return await sendLoggerPanel(configSettings, interaction, client)
-
-                    case 'setChannelModal':
-                        if (!extraPart) return interaction.reply({ content: "No event specified for setting channel.", flags: MessageFlags.Ephemeral })
+                    case 'setCategoryChannelModal':
+                        if (!extraPart) return interaction.reply({ content: "No category specified.", flags: MessageFlags.Ephemeral })
                         
                         const channelInputId = interaction.fields.getTextInputValue('channelInput').trim()
                         const logChannel = interaction.guild.channels.cache.get(channelInputId)
                         if (!logChannel || logChannel.type !== 0) return interaction.reply({ content: "Invalid channel ID. Please enter a valid text channel ID from this server.", flags: MessageFlags.Ephemeral })
                         
-                        let eventFound = false
-                        for (const [categoryKey, categoryEvents] of Object.entries(configSettings.channels)) {
-                            if (categoryEvents && typeof categoryEvents === 'object') {
-                                for (const [eventName, channelId] of Object.entries(categoryEvents)) {
-                                    if (eventName === extraPart) {
-                                        configSettings.channels[categoryKey][eventName] = logChannel.id
-                                        eventFound = true
-                                        break
-                                    }
-                                }
-                            }
-                            if (eventFound) break
-                        }
+                        const category = configSettings.channels[extraPart]
+                        if (!category) return interaction.reply({ content: "Category not found in configuration.", flags: MessageFlags.Ephemeral })
                         
-                        if (!eventFound) return interaction.reply({ content: "Event not found in configuration.", flags: MessageFlags.Ephemeral })
+                        category.channelId = logChannel.id
                         
                         configToEdit.configSettings = configSettings
                         updateGuildConfig(client, guildId, selectedSystem, configSettings)
-                        return await sendChannelManagementPanel(configSettings, interaction, client)
+                        
+                        return sendCategoryActionPanel(interaction, client, configSettings, extraPart)
 
                     default:
                         return interaction.reply({ content: "Unknown action for logger system.", flags: MessageFlags.Ephemeral })
@@ -92,8 +63,5 @@ export default {
             default:
                 return interaction.reply({ content: "Unknown configuration system.", flags: MessageFlags.Ephemeral })
         }
-
-        
-
     }
 }
