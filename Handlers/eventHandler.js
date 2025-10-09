@@ -13,8 +13,13 @@ export async function eventHandler(client) {
     if(client.events) {
         for(const [eventName, execute] of client.events) {
             client.removeListener(eventName, execute)
+            client.rest.removeListener(eventName, execute)
         }
     }
+
+    // Additionally remove all listeners
+    client.removeAllListeners()
+    client.rest.removeAllListeners()
 
     // Load new events
     client.events = new Map()
