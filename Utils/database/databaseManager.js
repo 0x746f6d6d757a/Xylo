@@ -16,7 +16,7 @@ function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)) }
 
 export async function getDatabasePool() { // <-- rename here
     if (databasePool) return databasePool
-    logger('db', 'info', 'Creating new database pool...')
+    logger(LogType.DB, LogLevel.INFO, 'Creating new database pool...')
 
     const tempConnection = await createConnection({
         host: databaseConfig.host,
@@ -32,11 +32,11 @@ export async function getDatabasePool() { // <-- rename here
     await tempConnection.query(`CREATE TABLE IF NOT EXISTS guilds (guildId VARCHAR(32) PRIMARY KEY, ownerId VARCHAR(32) NOT NULL, isPaying TINYINT(1) DEFAULT 0 )`)
     await tempConnection.query(`CREATE TABLE IF NOT EXISTS guild_configs ( configId INT AUTO_INCREMENT PRIMARY KEY, guildId VARCHAR(32) NOT NULL, configType VARCHAR(100) NOT NULL, configSettings TEXT NOT NULL )`)
 
-    logger('db', 'info', 'Ensured database and tables exist.')
+    logger(LogType.DB, LogLevel.INFO, 'Ensured database and tables exist.')
     await tempConnection.end()
 
     databasePool = await createNewPool()
-    logger('db', 'info', 'Database pool created and connected.')
+    logger(LogType.DB, LogLevel.INFO, 'Database pool created and connected.')
 
     return databasePool
 }
@@ -47,10 +47,10 @@ export default async function executeQuery(query, ...params) {
 
     try {
         const [ rows, fields ] = await databasePool.execute(query, params)
-        logger('db', 'info', `Executed query: ${query}`)
+        logger(LogType.DB, LogLevel.INFO, `Executed query: ${query}`)
         return { rows, fields }
     } catch (error) {
-        logger('db', 'error', `Error executing query: ${query} - ${error.message}`)
+        logger(LogType.DB, LogLevel.ERROR, `Error executing query: ${query} - ${error.message}`)
         throw error
     }
 
@@ -60,7 +60,7 @@ export async function closeDatabasePool() {
     if (databasePool) {
         await databasePool.end()
         databasePool = null
-        logger('db', 'info', 'Database pool closed.')
+        logger(LogType.DB, LogLevel.INFO, 'Database pool closed.')
     }
 }
 
@@ -82,70 +82,70 @@ async function createNewPool() {
                 logger("DB_ERROR", "Database connection lost.")
                 const currentTime = Date.now()
                 if (currentTime - lastReconnectAttempt < RECONNECT_INTERVAL) { // <-- fix variable name
-                    logger("DB_ERROR", "Reconnect attempt throttled, waiting...")
+                    logger(LogType.DB, LogLevel.ERROR, "Reconnect attempt throttled, waiting...")
                     break
                 }
 
                 lastReconnectAttempt = currentTime
-                logger("DB", `Attempting to reconnect in ${RECONNECT_INTERVAL / 1000}s...`) // <-- fix variable name
+                logger(LogType.DB, LogLevel.INFO, `Attempting to reconnect in ${RECONNECT_INTERVAL / 1000}s...`) // <-- fix variable name
                 await delay(RECONNECT_INTERVAL) // <-- fix variable name
 
                 try {
                     databasePool = null
                     await getDatabasePool() // <-- fix function name
-                    logger("DB", "Reconnected to the database successfully.")
+                    logger(LogType.DB, LogLevel.INFO, "Reconnected to the database successfully.")
                 } catch (reconnectError) {
-                    logger("DB_ERROR", `Database reconnection failed: ${reconnectError.message}`)
+                    logger(LogType.DB, LogLevel.ERROR, `Database reconnection failed: ${reconnectError.message}`)
                 }
                 break
 
             case 'ECONNREFUSED':
-                logger("DB_ERROR", "Database connection refused (is the server running?).")
+                logger(LogType.DB, LogLevel.ERROR, "Database connection refused (is the server running?).")
                 break
             case 'ETIMEDOUT':
-                logger("DB_ERROR", "Database connection attempt timed out.")
+                logger(LogType.DB, LogLevel.ERROR, "Database connection attempt timed out.")
                 break
 
             // Too many connections
             case 'ER_CON_COUNT_ERROR':
-                logger("DB_ERROR", "Database has too many connections.")
+                logger(LogType.DB, LogLevel.ERROR, "Database has too many connections.")
                 break
 
             // Authentication / permission issues
             case 'ER_ACCESS_DENIED_ERROR':
-                logger("DB_ERROR", "Access denied: invalid username/password or insufficient privileges.")
+                logger(LogType.DB, LogLevel.ERROR, "Access denied: invalid username/password or insufficient privileges.")
                 break
 
             // Missing database or table
             case 'ER_BAD_DB_ERROR':
-                logger("DB_ERROR", "Database does not exist.")
+                logger(LogType.DB, LogLevel.ERROR, "Database does not exist.")
                 break
             case 'ER_NO_SUCH_TABLE':
-                logger("DB_ERROR", "Table does not exist.")
+                logger(LogType.DB, LogLevel.ERROR, "Table does not exist.")
                 break
 
             // Query protocol / enqueue issues
             case 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR':
-                logger("DB_ERROR", "Cannot enqueue query after fatal error on connection.")
+                logger(LogType.DB, LogLevel.ERROR, "Cannot enqueue query after fatal error on connection.")
                 break
             case 'PROTOCOL_ENQUEUE_AFTER_QUIT':
-                logger("DB_ERROR", "Cannot enqueue query after connection quit.")
+                logger(LogType.DB, LogLevel.ERROR, "Cannot enqueue query after connection quit.")
                 break
             case 'PROTOCOL_ENQUEUE_HANDSHAKE_TWICE':
-                logger("DB_ERROR", "Handshake already in progress or completed.")
+                logger(LogType.DB, LogLevel.ERROR, "Handshake already in progress or completed.")
                 break
 
             // Server gone / shutdown
             case 'PROTOCOL_CONNECTION_FAILED':
-                logger("DB_ERROR", "Connection to database server failed.")
+                logger(LogType.DB, LogLevel.ERROR, "Connection to database server failed.")
                 break
             case 'SERVER_SHUTDOWN':
-                logger("DB_ERROR", "Database server shutdown detected.")
+                logger(LogType.DB, LogLevel.ERROR, "Database server shutdown detected.")
                 break
 
             // General / unknown
             default:
-                logger("DB_ERROR", `Unhandled database error: code=${error.code}, errno=${error.errno}, message=${error.message}`)
+                logger(LogType.DB, LogLevel.ERROR, `Unhandled database error: code=${error.code}, errno=${error.errno}, message=${error.message}`)
                 break
         }
 
@@ -194,12 +194,12 @@ export async function updateGuildConfig(client, guildId, configType, updatedSett
             break
 
         default:
-            logger('db', 'warn', `No validator defined for config type: ${configType}`)
+            logger(LogType.DB, LogLevel.WARN, `No validator defined for config type: ${configType}`)
             isValid = false
             break
     }
 
-    if (!isValid) return logger('db', 'error', `Invalid configuration settings for type: ${configType}. Update aborted.`)
+    if (!isValid) return logger(LogType.DB, LogLevel.ERROR , `Invalid configuration settings for type: ${configType}. Update aborted.`)
 
     let guildSettings = client.guildConfigs.get(guildId) || []
     let configToEdit = guildSettings.find(config => config.configType === configType)
@@ -214,15 +214,15 @@ export async function updateGuildConfig(client, guildId, configType, updatedSett
     
     if (flushTimeout) clearTimeout(flushTimeout)
     flushTimeout = setTimeout(() => flushPendingUpdates(), 5000) // 5s debounce
-    
-    logger('db', 'debug', `Queued config update for ${key}`)
+
+    logger(LogType.DB, LogLevel.DEBUG, `Queued config update for ${key}`)
 }
 
 // Flushes all pending updates to the database
 async function flushPendingUpdates() {
     if (pendingUpdates.size === 0) return
 
-    logger('db', 'info', `Flushing ${pendingUpdates.size} pending config updates...`)
+    logger(LogType.DB, LogLevel.INFO, `Flushing ${pendingUpdates.size} pending config updates...`)
 
     for (const [key, { guildId, configType, updatedSettings }] of pendingUpdates) {
         try {
@@ -232,11 +232,11 @@ async function flushPendingUpdates() {
             pendingUpdates.delete(key)
 
         } catch (error) {
-            logger('db', 'error', `Failed to update config for ${key}: ${error.message}`)
+            logger(LogType.DB, LogLevel.ERROR, `Failed to update config for ${key}: ${error.message}`)
         }
     }
 
-    logger('db', 'info', 'Pending updates flushed.')
+    logger(LogType.DB, LogLevel.INFO, 'Pending updates flushed.')
 }
 
 /**
@@ -245,7 +245,7 @@ async function flushPendingUpdates() {
  */
 export function startConfigUpdateInterval(intervalMs = 30000) {
     setInterval(async () => { await flushPendingUpdates() }, intervalMs)
-    logger('db', 'info', `Config update interval started (every ${intervalMs / 1000}s)`)
+    logger(LogType.DB, LogLevel.INFO, `Config update interval started (every ${intervalMs / 1000}s)`)
 }
 
 /**

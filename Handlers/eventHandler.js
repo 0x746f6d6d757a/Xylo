@@ -36,6 +36,6 @@ export async function eventHandler(client) {
         client.events.set(eventModule.default.name, execute)
     }
 
-    logger('app', 'info', `Loaded ${client.events.size}/${eventsFiles.length} events.`)
+    logger(LogType.APP, LogLevel.INFO, `Loaded ${client.events.size}/${eventsFiles.length} events.`)
 
 }

@@ -10,10 +10,23 @@ const colorHash = {
     darkPurple: chalk.hex('#6f1c9eff')
 }
 
+// Logger type definition
+export const LogType = {
+    APP: 'app',
+    DB: 'db'
+}
+// Logger level definition
+export const LogLevel = {
+    INFO: 'info',
+    WARN: 'warn',
+    ERROR: 'error',
+    DEBUG: 'debug'
+}
+
 /**
  * Logger function to log messages with different levels and types
- * @param {string} type - The type of the log (e.g., 'app', 'db')
- * @param {string} level - The level of the log (e.g., 'info', 'warn', 'error')
+ * @param {LogType} type - The type of the log (e.g., 'app', 'db')
+ * @param {LogLevel} level - The level of the log (e.g., 'info', 'warn', 'error')
  * @param {string} message - The message to log
  */
 export default function logger(type, level, message) {
@@ -29,6 +42,11 @@ export default function logger(type, level, message) {
                 case 'error':
                     console.log(colorHash.darkPurple(`[${timestamp}] [DB ERROR] ${message}`))
                     break
+                case 'warn':
+                    console.log(colorHash.lightYellow(`[${timestamp}] [DB WARN] ${message}`))
+                    break
+                default:
+                    console.log(colorHash.lightGray(`[${timestamp}] [DB DEBUG] ${message}`))
             }
             break
 
@@ -70,3 +88,4 @@ function formatDate(date = new Date()) {
 
     return `${day}/${month}/${year} ${hours}:${minutes}`
 }
+
