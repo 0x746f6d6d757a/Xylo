@@ -1,4 +1,4 @@
-import logger from "../Functions/logger.js"
+import logger, { LogType, LogLevel } from "../Functions/logger.js"
 import loadFiles from "../Functions/loadFiles.js"
 import { pathToFileURL } from "url"
 import { Client } from "discord.js"

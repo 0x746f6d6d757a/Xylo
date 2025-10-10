@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, Events, MessageFlags, ModalBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction, TextInputBuilder, TextInputStyle, ButtonStyle } from "discord.js"
+import { ActionRowBuilder, ButtonBuilder, Events, MessageFlags, ModalBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction, TextInputBuilder, TextInputStyle } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { sendLoggerPanel, sendLoggerChannelSettingsPanel, sendCategoryEventManagementPanel, sendCategoryActionPanel } from "../../Utils/messages/LoggerPanel/sendPanel.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
@@ -97,21 +97,23 @@ export default {
                             case 'setChannel':
                                 const existingChannelId = category.channelId || ''
                                 
-                                const channelInput = new TextInputBuilder()
+                                const textInputSetChannel = new TextInputBuilder()
                                     .setCustomId('channelInput')
-                                    .setLabel('Logging Channel ID')
                                     .setPlaceholder('Enter the logging channel ID for this category')
                                     .setStyle(TextInputStyle.Short)
                                     .setRequired(true)
                                 
                                 if (existingChannelId) channelInput.setValue(existingChannelId)
+
+                                const labelSetChannel = new LabelBuilder()
+                                    .setLabel('Please insert the channel ID.')
+                                    .setDescription('Insert the channel id you wish to use.')
+                                    .setTextInputComponent(textInputSetChannel)
                                 
                                 const modalFillInfo = new ModalBuilder()
                                     .setCustomId(`loggerSystem|${guildId}|setCategoryChannelModal_${extraPart}`)
                                     .setTitle(`Set Channel for ${extraPart}`)
-                                    .addComponents(
-                                        new ActionRowBuilder().addComponents(channelInput)
-                                    )
+                                    .setLabelComponents(labelSetChannel)
                                 
                                 return await interaction.showModal(modalFillInfo)
 
@@ -134,7 +136,6 @@ export default {
                     default:
                         return interaction.reply({ content: "Unknown action for logger system.", flags: MessageFlags.Ephemeral })
                 }
-                break
 
             default:
                 return interaction.reply({ content: "Unknown interaction.", flags: MessageFlags.Ephemeral })

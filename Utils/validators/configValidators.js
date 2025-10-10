@@ -1,4 +1,4 @@
-import logger from "../../Functions/logger"
+import logger, { LogType, LogLevel } from "../../Functions/logger.js"
 
 /**
  * Validates the logger configuration object.

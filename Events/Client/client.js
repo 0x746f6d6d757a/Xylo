@@ -1,7 +1,7 @@
 import { Events, Client, ActivityType } from "discord.js"
-import logger, { LogType } from "../../Functions/logger.js"
+import logger, { LogType, LogLevel } from "../../Functions/logger.js"
 import { commandHandler } from "../../Handlers/commandHandler.js"
-import executeQuery, { refreshClientConfigs } from "../../Utils/database/databaseManager.js"
+import { refreshClientConfigs } from "../../Utils/database/databaseManager.js"
 
 export default {
     name: Events.ClientReady,
@@ -13,7 +13,7 @@ export default {
     async execute(client) {
 
         await commandHandler(client)
-        logger(LogType.APP, LogType.INFO, `Logged in as ${client.user.tag}`)
+        logger(LogType.APP, LogLevel.INFO, `Logged in as ${client.user.tag}`)
 
         // Set an array of activities the bot will cycle through every 10 minutes
         let activitiesIndex = 0
@@ -41,7 +41,7 @@ export default {
                 username: developer.username,
                 footerText: `Developed by ${developer.username}`
             }
-            logger(LogType.APP, LogType.INFO, `Developer info loaded: ${developer.tag} (${developer.id})`)
+            logger(LogType.APP, LogLevel.INFO, `Developer info loaded: ${developer.tag} (${developer.id})`)
         }
 
         // Importing all the guild configurations into the map

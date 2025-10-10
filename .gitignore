@@ -1,9 +1,27 @@
-node_modules
-.DS_Store
+# Env
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Node
+node_modules
+
+# MacOS Custom Folderds
+.DS_Store
+
+# VisualStudioCode
 .vscode
+
+# ItelliJ
 .idea
+
+# Used configs for fast dev
+Utils/database/databaseConfig.json
+
+# PM2 Ecosystem
+ecosystem.config.cjs
+
+# Package 
+package-lock.json

@@ -1,7 +1,6 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, Client, MessageFlags, Events } from "discord.js"
+import { SlashCommandBuilder, ChatInputCommandInteraction, Client, MessageFlags } from "discord.js"
 import executeQuery, { refreshClientConfigs } from "../../Utils/database/databaseManager.js"
-import logger, { LogType } from "../../Functions/logger.js"
-
+import logger, { LogType, LogLevel } from '../../Functions/logger.js'
 
 export default {
     data: new SlashCommandBuilder()
@@ -23,11 +22,11 @@ export default {
         const { rows } = await executeQuery(checkIfGuildExistsQuery, guildId)
 
         if (rows.length > 0) {
-            logger(LogType.DB, LogType.INFO, `Guild ${interaction.guild.name} (${guildId}) already exists.`)
+            logger(LogType.DB, LogLevel.INFO, `Guild ${interaction.guild.name} (${guildId}) already exists.`)
             return interaction.editReply({ content: "This guild has already been set up." })
         }
 
-        logger(LogType.DB, LogType.INFO, `Starting setup for guild ${interaction.guild.name} (${guildId})...`)
+        logger(LogType.DB, LogLevel.INFO, `Starting setup for guild ${interaction.guild.name} (${guildId})...`)
 
         let setupQuery = `INSERT INTO guilds (guildId, ownerId, isPaying) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE ownerId = VALUES(ownerId), isPaying = VALUES(isPaying)`
         await executeQuery(setupQuery, guildId, interaction.guild.ownerId, 0)

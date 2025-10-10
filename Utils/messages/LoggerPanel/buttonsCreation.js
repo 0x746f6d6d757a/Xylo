@@ -1,4 +1,4 @@
-import { ButtonBuilder, StringSelectMenuBuilder, TextInputBuilder, ButtonStyle, TextInputStyle } from "discord.js";
+import { ButtonBuilder, StringSelectMenuBuilder, ButtonStyle } from "discord.js";
 import { camelCaseToTitle } from "../stringParser.js";
 
 /**
@@ -48,7 +48,12 @@ export function getLoggerSettingsButtons(configSettings, interaction) {
         .setLabel('Manage Channels')
         .setStyle(ButtonStyle.Secondary)
 
-    return { toggleButton, changeLevelButton, openManagementEventsButton }
+    const createLogChannelsForLevelButton = new ButtonBuilder()
+        .setCustomId(`loggerSystem|${interaction.guildId}|createChannels`)
+        .setLabel(`Create channels`)
+        .setStyle(ButtonStyle.Secondary)
+
+    return { toggleButton, changeLevelButton, openManagementEventsButton, createLogChannelsForLevelButton }
 
 }
 

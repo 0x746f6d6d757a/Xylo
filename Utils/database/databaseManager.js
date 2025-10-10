@@ -1,5 +1,5 @@
 import { createPool, createConnection } from "mysql2/promise"
-import logger from "../../Functions/logger.js"
+import logger, { LogType, LogLevel } from "../../Functions/logger.js"
 import databaseConfig from "./databaseConfig.json" with { type: "json" }
 import { Client } from "discord.js"
 import { validateLoggerConfig } from "../validators/configValidators.js"
@@ -79,7 +79,7 @@ async function createNewPool() {
     dbPool.on('error', async ( error ) => {
         switch (error.code) {
             case 'PROTOCOL_CONNECTION_LOST':
-                logger("DB_ERROR", "Database connection lost.")
+                logger(LogType.DB, LogLevel.ERROR, "Database connection lost.")
                 const currentTime = Date.now()
                 if (currentTime - lastReconnectAttempt < RECONNECT_INTERVAL) { // <-- fix variable name
                     logger(LogType.DB, LogLevel.ERROR, "Reconnect attempt throttled, waiting...")
@@ -161,7 +161,7 @@ async function createNewPool() {
 export async function refreshClientConfigs(client) {
 
     if (!client || !client.guilds || !client.guilds.cache) {
-        logger('app', 'error', 'Client or guilds cache is not available for refreshing configurations.')
+        logger(LogType.APP, LogLevel.ERROR, 'Client or guilds cache is not available for refreshing configurations.')
         return
     }
 
@@ -169,7 +169,7 @@ export async function refreshClientConfigs(client) {
 
         let { rows: guildConfigs } = await executeQuery(`SELECT * FROM guild_configs WHERE guildId = ${guild.id}`)
         client.guildConfigs.set(guild.id, guildConfigs)
-        logger('app', 'info', `Configuration refreshed for guild ${guild.name} (${guild.id})`)
+        logger(LogType.APP, LogLevel.INFO, `Configuration refreshed for guild ${guild.name} (${guild.id})`)
 
     }
 }
@@ -252,7 +252,7 @@ export function startConfigUpdateInterval(intervalMs = 30000) {
  * Forces an immediate flush of pending updates (useful for graceful shutdown)
  */
 export async function forceSyncConfigs() {
-    logger('db', 'info', 'Forcing immediate sync of pending configs...')
+    logger(LogType.DB, LogLevel.INFO, 'Forcing immediate sync of pending configs...')
     await flushPendingUpdates()
 }
 

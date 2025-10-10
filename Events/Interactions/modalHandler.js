@@ -1,7 +1,7 @@
-import { Client, Events, MessageFlags, ModalSubmitInteraction, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js"
+import { Client, Events, MessageFlags, ModalSubmitInteraction } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
-import { sendLoggerChannelSettingsPanel, sendLoggerPanel, sendCategoryActionPanel } from "../../Utils/messages/LoggerPanel/sendPanel.js"
+import { sendLoggerPanel, sendCategoryActionPanel } from "../../Utils/messages/LoggerPanel/sendPanel.js"
 
 export default {
     name: Events.InteractionCreate,

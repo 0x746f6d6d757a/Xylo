@@ -1,5 +1,5 @@
 import executeQuery from "./databaseManager"
-import logger from "../../Functions/logger"
+import logger, { LogType, LogLevel } from "../../Functions/logger.js"
 
 
 /**
@@ -16,10 +16,10 @@ export async function saveGuildSettings(guildId, guildSettings) {
             await executeQuery(query, guildId, systemName, JSON.stringify(systemConfig), JSON.stringify(systemConfig))
         }
 
-        logger('db', 'info', `Guild settings saved for guildId ${guildId}`)
+        logger(LogType.DB, LogLevel.INFO, `Guild settings saved for guildId ${guildId}`)
 
     } catch (error) {
-        logger('db', 'error', `Error saving guild settings for guildId ${guildId} - ${error.stack}`)
+        logger(LogType.DB, LogLevel.ERROR, `Error saving guild settings for guildId ${guildId} - ${error.stack}`)
         throw error
     }
 }
@@ -40,7 +40,7 @@ export async function getGuildSettings(guildId) {
         }
         return guildSettings
     } catch (error) {
-        logger('db', 'error', `Error retrieving guild settings for guildId ${guildId} - ${error.stack}`)
+        logger(LogType.DB, LogLevel.ERROR, `Error retrieving guild settings for guildId ${guildId} - ${error.stack}`)
         throw error
     }
 }

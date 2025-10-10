@@ -1,4 +1,4 @@
-import logger, { LogType } from "../Functions/logger.js"
+import logger, { LogType, LogLevel } from "../Functions/logger.js"
 import loadFiles from "../Functions/loadFiles.js"
 import { pathToFileURL } from "url"
 import { Client } from "discord.js"
@@ -20,7 +20,7 @@ export async function commandHandler(client) {
 
         const command = commandModule.default
         if (!command.data || !command.execute) {
-            logger(LogType.APP, LogType.WARN, `The command at ${file} is missing a required "data" or "execute" property.`)
+            logger(LogType.APP, LogLevel.WARN, `The command at ${file} is missing a required "data" or "execute" property.`)
             continue
         }
 
@@ -30,6 +30,6 @@ export async function commandHandler(client) {
     }
 
     await client.application.commands.set(commandsArray)
-    logger(LogType.APP, LogType.INFO, `Loaded ${client.commands.size}/${commandsArray.length} commands.`)
+    logger(LogType.APP, LogLevel.INFO, `Loaded ${client.commands.size}/${commandsArray.length} commands.`)
 
 }

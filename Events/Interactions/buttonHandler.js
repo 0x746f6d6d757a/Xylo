@@ -1,8 +1,8 @@
-import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from "discord.js"
+import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
 import { sendLoggerChannelSettingsPanel, sendLoggerPanel } from "../../Utils/messages/LoggerPanel/sendPanel.js"
-import { sendSettingsMenu } from "../../Utils/messages/SettingPanel/sendPanel.js"
+import { sendSettingsMenu } from "../../Utils/messages/Panels/settingsPanel.js"
 
 export default {
     name: Events.InteractionCreate,
@@ -46,21 +46,25 @@ export default {
                         updateGuildConfig(client, guildId, selectedSystem, configSettings)
                         return await sendLoggerPanel(interaction, client, configSettings)
 
-                    case 'changeLevel':
-                        
+                    case 'changeLevel': 
+
                         const textInputLevel = new TextInputBuilder()
                             .setCustomId('loggingLevelInput')
-                            .setLabel('Enter a logging level (1-3)')
                             .setStyle(TextInputStyle.Short)
                             .setPlaceholder('1 - Errors Only | 2 - Warnings + Errors | 3 - All Logs')
                             .setRequired(true)
                             .setMaxLength(1)
                             .setMinLength(1)
-                        
+
+                        const labelLevel = new LabelBuilder()
+                            .setLabel('Please insert your desired logging level.')
+                            .setDescription('Logging level')
+                            .setTextInputComponent(textInputLevel)
+
                         const changeLevelModal = new ModalBuilder()
                             .setCustomId(`loggerSystem|${guildId}|changeLevelModal`)
                             .setTitle('Change Logging Level')
-                            .setLabelComponents(new ActionRowBuilder().addComponents(textInputLevel))
+                            .setLabelComponents(labelLevel)
 
                         return await interaction.showModal(changeLevelModal)
 

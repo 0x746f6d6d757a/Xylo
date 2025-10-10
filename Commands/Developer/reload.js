@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, Client, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { eventHandler } from "../../Handlers/eventHandler.js";
 import { commandHandler } from "../../Handlers/commandHandler.js";
+import logger, { LogType, LogLevel } from "../../Functions/logger.js";
 
 export default {
     data: new SlashCommandBuilder()
@@ -46,6 +47,19 @@ export default {
 
                 await commandHandler(client)
                 await interaction.editReply({ content: `You have refreshed all the commands.` })
+
+                break
+
+            case 'restart': 
+
+                await interaction.editReply({ content: `The bot will restart in 3 seconds.`})
+
+                setTimeout( () => {
+
+                    logger(LogType.APP, LogLevel.INFO, 'Restarting bot process...')
+                    process.exit(0)
+
+                }, 3000)
 
                 break
 

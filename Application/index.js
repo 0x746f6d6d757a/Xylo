@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import util from 'util'
 
 // Custom Logger Import
-import logger from '../Functions/logger.js'
+import logger, { LogType, LogLevel } from '../Functions/logger.js'
 import { startConfigUpdateInterval, forceSyncConfigs, closeDatabasePool } from '../Utils/database/databaseManager.js'
 
 // Getting the .env variables
@@ -45,26 +45,26 @@ await eventHandler(client)
  * * [SIGTERM] Emitted when the process is terminated (for example, by the system or a container orchestrator).
  */
 process.on('warning', (warning) => {
-    logger(LogType.APP, LogType.WARN, `[${warning.name}] ${warning.message}\n${warning.stack}`)
+    logger(LogType.APP, LogLevel.WARN, `[${warning.name}] ${warning.message}\n${warning.stack}`)
 })
 
 process.on('unhandledRejection', (reason, promise) => {
-    logger(LogType.APP, LogType.ERROR, `Unhandled Rejection at: ${util.inspect(promise, { depth: null })}, reason: ${util.inspect(reason, { depth: null })}`)
+    logger(LogType.APP, LogLevel.ERROR, `Unhandled Rejection at: ${util.inspect(promise, { depth: null })}, reason: ${util.inspect(reason, { depth: null })}`)
 })
 
 process.on('uncaughtException', (error) => {
-    logger(LogType.APP, LogType.ERROR, `Uncaught Exception: ${util.inspect(error, { depth: null })}`)
+    logger(LogType.APP, LogLevel.ERROR, `Uncaught Exception: ${util.inspect(error, { depth: null })}`)
 })
 
 process.on('SIGINT', async () => {
-    logger(LogType.APP, LogType.INFO, 'Shutting down gracefully...')
+    logger(LogType.APP, LogLevel.INFO, 'Shutting down gracefully...')
     await forceSyncConfigs()
     await closeDatabasePool()
     process.exit(0)
 })
 
 process.on('SIGTERM', async () => {
-    logger('system', 'info', 'Shutting down gracefully...')
+    logger(LogType.APP, LogLevel.INFO, 'Shutting down gracefully...')
     await forceSyncConfigs()
     await closeDatabasePool()
     process.exit(0)
