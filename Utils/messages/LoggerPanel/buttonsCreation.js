@@ -48,12 +48,7 @@ export function getLoggerSettingsButtons(configSettings, interaction) {
         .setLabel('Manage Channels')
         .setStyle(ButtonStyle.Secondary)
 
-    const createLogChannelsForLevelButton = new ButtonBuilder()
-        .setCustomId(`loggerSystem|${interaction.guildId}|createChannels`)
-        .setLabel(`Create channels`)
-        .setStyle(ButtonStyle.Secondary)
-
-    return { toggleButton, changeLevelButton, openManagementEventsButton, createLogChannelsForLevelButton }
+    return { toggleButton, changeLevelButton, openManagementEventsButton }
 
 }
 

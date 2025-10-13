@@ -11,12 +11,12 @@ import { loggerChannelsSettingsEmbed, loggerSettingsEmbed, categoryManagementEve
 export function sendLoggerPanel(interaction, client, configSettings) {
 
     const loggerEmbed = loggerSettingsEmbed(configSettings, client)
-    const { toggleButton, changeLevelButton, openManagementEventsButton, createLogChannelsForLevelButton } = getLoggerSettingsButtons(configSettings, interaction)
+    const { toggleButton, changeLevelButton, openManagementEventsButton } = getLoggerSettingsButtons(configSettings, interaction)
     const { backToMainMenuButton } = getNavigationButtons(interaction, false) // Don't show logger back button
 
     const firstComponentRow = new ActionRowBuilder()
-        .addComponents(toggleButton, changeLevelButton, openManagementEventsButton, createLogChannelsForLevelButton)
-    
+        .addComponents(toggleButton, changeLevelButton, openManagementEventsButton)
+
     const secondComponentRow = new ActionRowBuilder()
         .addComponents(backToMainMenuButton)
 

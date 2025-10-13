@@ -1,8 +1,8 @@
-import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js"
+import { Events, Client, ButtonInteraction, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, LabelBuilder } from "discord.js"
 import { parseCustomId } from "../../Utils/messages/stringParser.js"
 import { updateGuildConfig } from "../../Utils/database/databaseManager.js"
 import { sendLoggerChannelSettingsPanel, sendLoggerPanel } from "../../Utils/messages/LoggerPanel/sendPanel.js"
-import { sendSettingsMenu } from "../../Utils/messages/Panels/settingsPanel.js"
+import { sendSettingsMenu } from "../../Utils/messages/SettingPanel/sendPanel.js"
 
 export default {
     name: Events.InteractionCreate,
@@ -70,7 +70,7 @@ export default {
 
                     case 'manageChannels':
                         return await sendLoggerChannelSettingsPanel(interaction, client, configSettings)
-
+                    
                     case 'mainMenu':
                         return await sendLoggerPanel(interaction, client, configSettings)
 
